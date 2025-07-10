@@ -13,16 +13,18 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex min-h-screen w-full bg-gray-100">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/budgets" element={<Budgets />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      <main className="flex-1 w-full min-w-0 overflow-auto">
+        <div className="h-full w-full">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/budgets" element={<Budgets />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );

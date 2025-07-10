@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,5 +102,59 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Ensure images and media are responsive */
+  img, video, canvas, audio, iframe, embed, object {
+    @apply max-w-full h-auto;
+  }
+
+  /* Prevent horizontal overflow */
+  html, body {
+    @apply overflow-x-hidden;
+  }
+
+  /* Responsive typography */
+  h1 { @apply text-2xl sm:text-3xl lg:text-4xl; }
+  h2 { @apply text-xl sm:text-2xl lg:text-3xl; }
+  h3 { @apply text-lg sm:text-xl lg:text-2xl; }
+  h4 { @apply text-base sm:text-lg lg:text-xl; }
+  h5 { @apply text-sm sm:text-base lg:text-lg; }
+  h6 { @apply text-xs sm:text-sm lg:text-base; }
+}
+
+@layer utilities {
+  /* Responsive spacing utilities */
+  .container-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section-spacing {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+
+  /* Responsive grid utilities */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .grid-responsive-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6;
+  }
+
+  /* Text responsive utilities */
+  .text-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+
+  /* Responsive card utilities */
+  .card-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
   }
 }
