@@ -28,55 +28,48 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      // Buscar organizações do usuário usando rpc ou query direta
-      const { data: orgsData, error: orgsError } = await supabase
-        .rpc('get_user_organizations', { user_uuid: user.id });
+      // Buscar organizações do usuário
+      const { data: memberData, error: memberError } = await supabase
+        .from('organization_members' as any)
+        .select(`
+          organizations!inner(*)
+        `)
+        .eq('user_id', user.id);
 
-      if (orgsError) {
-        // Se RPC não existir, fazer query direta
-        console.log('RPC not found, using direct query');
-        const { data: memberData, error: memberError } = await (supabase as any)
-          .from('organization_members')
-          .select(`
-            organizations!inner(*)
-          `)
-          .eq('user_id', user.id);
-
-        if (memberError) throw memberError;
-        
-        const userOrganizations = memberData?.map((item: any) => item.organizations) || [];
-        setOrganizations(userOrganizations);
-
-        // Buscar organização atual do perfil
-        const { data: profileData, error: profileError } = await (supabase as any)
-          .from('profiles')
-          .select('current_organization_id')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profile error:', profileError);
-          if (userOrganizations.length > 0) {
-            setCurrentOrganization(userOrganizations[0]);
-          }
-          return;
-        }
-
-        // Encontrar a organização atual
-        const currentOrgId = profileData?.current_organization_id;
-        if (currentOrgId) {
-          const currentOrg = userOrganizations.find((org: any) => org.id === currentOrgId);
-          setCurrentOrganization(currentOrg || userOrganizations[0] || null);
-        } else if (userOrganizations.length > 0) {
-          setCurrentOrganization(userOrganizations[0]);
-        }
+      if (memberError) {
+        console.error('Error fetching organizations:', memberError);
+        setOrganizations([]);
+        setCurrentOrganization(null);
+        setLoading(false);
         return;
       }
 
-      // Se RPC funcionou, usar os dados retornados
-      setOrganizations(orgsData || []);
-      if (orgsData && orgsData.length > 0) {
-        setCurrentOrganization(orgsData[0]);
+      const userOrganizations = memberData?.map((item: any) => item.organizations) || [];
+      setOrganizations(userOrganizations);
+
+      // Buscar organização atual do perfil
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles' as any)
+        .select('current_organization_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        if (userOrganizations.length > 0) {
+          setCurrentOrganization(userOrganizations[0]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Encontrar a organização atual
+      const currentOrgId = profileData?.current_organization_id;
+      if (currentOrgId && userOrganizations.length > 0) {
+        const currentOrg = userOrganizations.find((org: any) => org.id === currentOrgId);
+        setCurrentOrganization(currentOrg || userOrganizations[0] || null);
+      } else if (userOrganizations.length > 0) {
+        setCurrentOrganization(userOrganizations[0]);
       }
 
     } catch (error) {
@@ -93,8 +86,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
     try {
       // Atualizar o perfil do usuário
-      const { error } = await (supabase as any)
-        .from('profiles')
+      const { error } = await supabase
+        .from('profiles' as any)
         .update({ current_organization_id: organizationId })
         .eq('id', user.id);
 
