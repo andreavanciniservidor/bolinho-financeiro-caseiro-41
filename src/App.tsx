@@ -16,37 +16,58 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   return (
-    <div className="flex min-h-screen w-full bg-gray-100">
-      <Sidebar />
-      <main className="flex-1 w-full min-w-0 overflow-auto">
-        <div className="h-full w-full">
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
-              <ProtectedRoute>
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <div className="flex min-h-screen w-full bg-gray-100">
+            <Sidebar />
+            <main className="flex-1 w-full min-w-0 overflow-auto">
+              <div className="h-full w-full">
                 <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/transactions" element={
-              <ProtectedRoute>
+              </div>
+            </main>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/transactions" element={
+        <ProtectedRoute>
+          <div className="flex min-h-screen w-full bg-gray-100">
+            <Sidebar />
+            <main className="flex-1 w-full min-w-0 overflow-auto">
+              <div className="h-full w-full">
                 <Transactions />
-              </ProtectedRoute>
-            } />
-            <Route path="/budgets" element={
-              <ProtectedRoute>
+              </div>
+            </main>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/budgets" element={
+        <ProtectedRoute>
+          <div className="flex min-h-screen w-full bg-gray-100">
+            <Sidebar />
+            <main className="flex-1 w-full min-w-0 overflow-auto">
+              <div className="h-full w-full">
                 <Budgets />
-              </ProtectedRoute>
-            } />
-            <Route path="/reports" element={
-              <ProtectedRoute>
+              </div>
+            </main>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/reports" element={
+        <ProtectedRoute>
+          <div className="flex min-h-screen w-full bg-gray-100">
+            <Sidebar />
+            <main className="flex-1 w-full min-w-0 overflow-auto">
+              <div className="h-full w-full">
                 <Reports />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </main>
-    </div>
+              </div>
+            </main>
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
