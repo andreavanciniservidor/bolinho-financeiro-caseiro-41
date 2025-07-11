@@ -31,7 +31,15 @@ export function useSupabaseCategories() {
 
       if (error) throw error;
 
-      setCategories(data || []);
+      // Convert Supabase data to Category interface with proper typing
+      const typedCategories: Category[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type as 'income' | 'expense',
+        color: item.color
+      }));
+
+      setCategories(typedCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
@@ -56,8 +64,16 @@ export function useSupabaseCategories() {
 
       if (error) throw error;
 
-      setCategories(prev => [...prev, data]);
-      return { data, error: null };
+      // Convert the returned data to Category interface
+      const newCategory: Category = {
+        id: data.id,
+        name: data.name,
+        type: data.type as 'income' | 'expense',
+        color: data.color
+      };
+
+      setCategories(prev => [...prev, newCategory]);
+      return { data: newCategory, error: null };
     } catch (error) {
       console.error('Error adding category:', error);
       return { data: null, error: error.message };
