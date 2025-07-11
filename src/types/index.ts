@@ -28,3 +28,29 @@ export interface Category {
   type: 'income' | 'expense';
   color: string;
 }
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: 'owner' | 'admin' | 'member';
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  current_organization_id?: string;
+  created_at: string;
+  updated_at: string;
+}

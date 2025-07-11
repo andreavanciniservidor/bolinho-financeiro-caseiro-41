@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useOrganization } from './useOrganization';
 
 export interface Category {
   id: string;
@@ -14,9 +15,10 @@ export function useSupabaseCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
 
   const fetchCategories = async () => {
-    if (!user) {
+    if (!user || !currentOrganization) {
       setCategories([]);
       setIsLoading(false);
       return;
@@ -26,7 +28,7 @@ export function useSupabaseCategories() {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', currentOrganization.id)
         .order('name');
 
       if (error) throw error;
@@ -50,15 +52,19 @@ export function useSupabaseCategories() {
 
   useEffect(() => {
     fetchCategories();
-  }, [user]);
+  }, [user, currentOrganization]);
 
   const addCategory = async (category: Omit<Category, 'id'>) => {
-    if (!user) return { data: null, error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
       const { data, error } = await supabase
         .from('categories')
-        .insert([{ ...category, user_id: user.id }])
+        .insert([{ 
+          ...category, 
+          user_id: user.id,
+          organization_id: currentOrganization.id 
+        }])
         .select()
         .single();
 

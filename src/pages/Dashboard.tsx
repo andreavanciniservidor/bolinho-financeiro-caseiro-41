@@ -1,4 +1,3 @@
-
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -86,10 +85,9 @@ export function Dashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Orçamento Doméstico</h1>
         <p className="text-gray-600">julho de 2025</p>
       </div>
 

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useOrganization } from './useOrganization';
 
 export interface Transaction {
   id: string;
@@ -20,9 +21,10 @@ export function useSupabaseTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
 
   const fetchTransactions = async () => {
-    if (!user) {
+    if (!user || !currentOrganization) {
       setTransactions([]);
       setIsLoading(false);
       return;
@@ -35,7 +37,7 @@ export function useSupabaseTransactions() {
           *,
           categories!inner(name)
         `)
-        .eq('user_id', user.id)
+        .eq('organization_id', currentOrganization.id)
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -64,10 +66,10 @@ export function useSupabaseTransactions() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [user]);
+  }, [user, currentOrganization]);
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-    if (!user) return { data: null, error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
       // Find category by name
@@ -75,7 +77,7 @@ export function useSupabaseTransactions() {
         .from('categories')
         .select('id')
         .eq('name', transaction.category)
-        .eq('user_id', user.id)
+        .eq('organization_id', currentOrganization.id)
         .single();
 
       const { data, error } = await supabase
@@ -91,6 +93,7 @@ export function useSupabaseTransactions() {
           installments: transaction.installments,
           observations: transaction.observations,
           user_id: user.id,
+          organization_id: currentOrganization.id,
         }])
         .select()
         .single();
@@ -106,7 +109,7 @@ export function useSupabaseTransactions() {
   };
 
   const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
-    if (!user) return { data: null, error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
       let categoryId = null;
@@ -115,7 +118,7 @@ export function useSupabaseTransactions() {
           .from('categories')
           .select('id')
           .eq('name', transaction.category)
-          .eq('user_id', user.id)
+          .eq('organization_id', currentOrganization.id)
           .single();
         categoryId = categoryData?.id;
       }
@@ -135,7 +138,7 @@ export function useSupabaseTransactions() {
         .from('transactions')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('organization_id', currentOrganization.id);
 
       if (error) throw error;
 
@@ -148,14 +151,14 @@ export function useSupabaseTransactions() {
   };
 
   const deleteTransaction = async (id: string) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { error: 'User not authenticated or no organization selected' };
 
     try {
       const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('organization_id', currentOrganization.id);
 
       if (error) throw error;
 

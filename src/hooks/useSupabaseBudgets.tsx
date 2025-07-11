@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useOrganization } from './useOrganization';
 
 export interface Budget {
   id: string;
@@ -17,9 +18,10 @@ export function useSupabaseBudgets() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
 
   const fetchBudgets = async () => {
-    if (!user) {
+    if (!user || !currentOrganization) {
       setBudgets([]);
       setIsLoading(false);
       return;
@@ -32,7 +34,7 @@ export function useSupabaseBudgets() {
           *,
           categories!inner(name)
         `)
-        .eq('user_id', user.id)
+        .eq('organization_id', currentOrganization.id)
         .order('name');
 
       if (error) throw error;
@@ -58,10 +60,10 @@ export function useSupabaseBudgets() {
 
   useEffect(() => {
     fetchBudgets();
-  }, [user]);
+  }, [user, currentOrganization]);
 
   const addBudget = async (budget: Omit<Budget, 'id' | 'spentAmount'>) => {
-    if (!user) return { data: null, error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
       // Find category by name
@@ -69,7 +71,7 @@ export function useSupabaseBudgets() {
         .from('categories')
         .select('id')
         .eq('name', budget.category)
-        .eq('user_id', user.id)
+        .eq('organization_id', currentOrganization.id)
         .single();
 
       const { data, error } = await supabase
@@ -81,6 +83,7 @@ export function useSupabaseBudgets() {
           alert_percentage: budget.alertPercentage,
           is_active: budget.isActive,
           user_id: user.id,
+          organization_id: currentOrganization.id,
         }])
         .select()
         .single();
@@ -96,7 +99,7 @@ export function useSupabaseBudgets() {
   };
 
   const updateBudget = async (id: string, budget: Partial<Budget>) => {
-    if (!user) return { data: null, error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
       let categoryId = null;
@@ -105,7 +108,7 @@ export function useSupabaseBudgets() {
           .from('categories')
           .select('id')
           .eq('name', budget.category)
-          .eq('user_id', user.id)
+          .eq('organization_id', currentOrganization.id)
           .single();
         categoryId = categoryData?.id;
       }
@@ -121,7 +124,7 @@ export function useSupabaseBudgets() {
         .from('budgets')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('organization_id', currentOrganization.id);
 
       if (error) throw error;
 
@@ -134,14 +137,14 @@ export function useSupabaseBudgets() {
   };
 
   const deleteBudget = async (id: string) => {
-    if (!user) return { error: 'User not authenticated' };
+    if (!user || !currentOrganization) return { error: 'User not authenticated or no organization selected' };
 
     try {
       const { error } = await supabase
         .from('budgets')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('organization_id', currentOrganization.id);
 
       if (error) throw error;
 
