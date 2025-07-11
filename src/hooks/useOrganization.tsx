@@ -28,49 +28,18 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      // Buscar organizações do usuário
-      const { data: memberData, error: memberError } = await supabase
-        .from('organization_members' as any)
-        .select(`
-          organizations!inner(*)
-        `)
-        .eq('user_id', user.id);
+      // For now, create a default organization since the tables don't exist yet
+      // This will be replaced once the organization tables are created
+      const defaultOrganization: Organization = {
+        id: 'default-org',
+        name: 'Minha Organização',
+        slug: 'minha-organizacao',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      if (memberError) {
-        console.error('Error fetching organizations:', memberError);
-        setOrganizations([]);
-        setCurrentOrganization(null);
-        setLoading(false);
-        return;
-      }
-
-      const userOrganizations = memberData?.map((item: any) => item.organizations) || [];
-      setOrganizations(userOrganizations);
-
-      // Buscar organização atual do perfil
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles' as any)
-        .select('current_organization_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Profile error:', profileError);
-        if (userOrganizations.length > 0) {
-          setCurrentOrganization(userOrganizations[0]);
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Encontrar a organização atual
-      const currentOrgId = profileData?.current_organization_id;
-      if (currentOrgId && userOrganizations.length > 0) {
-        const currentOrg = userOrganizations.find((org: any) => org.id === currentOrgId);
-        setCurrentOrganization(currentOrg || userOrganizations[0] || null);
-      } else if (userOrganizations.length > 0) {
-        setCurrentOrganization(userOrganizations[0]);
-      }
+      setOrganizations([defaultOrganization]);
+      setCurrentOrganization(defaultOrganization);
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -85,15 +54,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     if (!user) return;
 
     try {
-      // Atualizar o perfil do usuário
-      const { error } = await supabase
-        .from('profiles' as any)
-        .update({ current_organization_id: organizationId })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Atualizar o estado local
+      // For now, just update the local state
+      // This will be replaced once the organization tables are created
       const newCurrentOrg = organizations.find(org => org.id === organizationId);
       if (newCurrentOrg) {
         setCurrentOrganization(newCurrentOrg);
