@@ -6,11 +6,14 @@ import {
   BarChart3,
   Bell,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -21,6 +24,11 @@ const navigation = [
 
 export function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -95,21 +103,29 @@ export function Sidebar() {
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-gray-700">U</span>
+              <span className="text-sm font-medium text-gray-700">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                Usuário
+                {user?.user_metadata?.first_name || 'Usuário'}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                usuario@exemplo.com
+                {user?.email || 'usuario@exemplo.com'}
               </p>
             </div>
           </div>
-          <div className="flex items-center mt-2 space-x-2 text-xs">
-            <button className="text-gray-500 hover:text-gray-700 truncate">
-              Configurações
-            </button>
+          <div className="flex items-center mt-2 space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="text-xs text-gray-500 hover:text-gray-700 p-1 h-auto"
+            >
+              <LogOut className="h-3 w-3 mr-1" />
+              Sair
+            </Button>
           </div>
         </div>
       </div>
