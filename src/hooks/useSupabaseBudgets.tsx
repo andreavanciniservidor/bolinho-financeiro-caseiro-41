@@ -28,7 +28,7 @@ export function useSupabaseBudgets() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('budgets')
         .select(`
           *,
@@ -39,7 +39,7 @@ export function useSupabaseBudgets() {
 
       if (error) throw error;
 
-      const formattedBudgets = data?.map(b => ({
+      const formattedBudgets = data?.map((b: any) => ({
         id: b.id,
         name: b.name,
         category: b.categories?.name || 'Sem categoria',
@@ -67,14 +67,14 @@ export function useSupabaseBudgets() {
 
     try {
       // Find category by name
-      const { data: categoryData } = await supabase
+      const { data: categoryData } = await (supabase as any)
         .from('categories')
         .select('id')
         .eq('name', budget.category)
         .eq('organization_id', currentOrganization.id)
         .single();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('budgets')
         .insert([{
           name: budget.name,
@@ -94,7 +94,7 @@ export function useSupabaseBudgets() {
       return { data, error: null };
     } catch (error) {
       console.error('Error adding budget:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: (error as Error).message };
     }
   };
 
@@ -104,7 +104,7 @@ export function useSupabaseBudgets() {
     try {
       let categoryId = null;
       if (budget.category) {
-        const { data: categoryData } = await supabase
+        const { data: categoryData } = await (supabase as any)
           .from('categories')
           .select('id')
           .eq('name', budget.category)
@@ -120,7 +120,7 @@ export function useSupabaseBudgets() {
       if (budget.alertPercentage !== undefined) updateData.alert_percentage = budget.alertPercentage;
       if (budget.isActive !== undefined) updateData.is_active = budget.isActive;
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('budgets')
         .update(updateData)
         .eq('id', id)
@@ -132,7 +132,7 @@ export function useSupabaseBudgets() {
       return { data: null, error: null };
     } catch (error) {
       console.error('Error updating budget:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: (error as Error).message };
     }
   };
 
@@ -140,7 +140,7 @@ export function useSupabaseBudgets() {
     if (!user || !currentOrganization) return { error: 'User not authenticated or no organization selected' };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('budgets')
         .delete()
         .eq('id', id)
@@ -152,7 +152,7 @@ export function useSupabaseBudgets() {
       return { error: null };
     } catch (error) {
       console.error('Error deleting budget:', error);
-      return { error: error.message };
+      return { error: (error as Error).message };
     }
   };
 

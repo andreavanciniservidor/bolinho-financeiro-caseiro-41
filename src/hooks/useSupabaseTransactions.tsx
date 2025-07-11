@@ -31,7 +31,7 @@ export function useSupabaseTransactions() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('transactions')
         .select(`
           *,
@@ -42,7 +42,7 @@ export function useSupabaseTransactions() {
 
       if (error) throw error;
 
-      const formattedTransactions = data?.map(t => ({
+      const formattedTransactions = data?.map((t: any) => ({
         id: t.id,
         description: t.description,
         amount: Number(t.amount),
@@ -73,14 +73,14 @@ export function useSupabaseTransactions() {
 
     try {
       // Find category by name
-      const { data: categoryData } = await supabase
+      const { data: categoryData } = await (supabase as any)
         .from('categories')
         .select('id')
         .eq('name', transaction.category)
         .eq('organization_id', currentOrganization.id)
         .single();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('transactions')
         .insert([{
           description: transaction.description,
@@ -104,7 +104,7 @@ export function useSupabaseTransactions() {
       return { data, error: null };
     } catch (error) {
       console.error('Error adding transaction:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: (error as Error).message };
     }
   };
 
@@ -114,7 +114,7 @@ export function useSupabaseTransactions() {
     try {
       let categoryId = null;
       if (transaction.category) {
-        const { data: categoryData } = await supabase
+        const { data: categoryData } = await (supabase as any)
           .from('categories')
           .select('id')
           .eq('name', transaction.category)
@@ -134,7 +134,7 @@ export function useSupabaseTransactions() {
       if (transaction.installments) updateData.installments = transaction.installments;
       if (transaction.observations) updateData.observations = transaction.observations;
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('transactions')
         .update(updateData)
         .eq('id', id)
@@ -146,7 +146,7 @@ export function useSupabaseTransactions() {
       return { data: null, error: null };
     } catch (error) {
       console.error('Error updating transaction:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: (error as Error).message };
     }
   };
 
@@ -154,7 +154,7 @@ export function useSupabaseTransactions() {
     if (!user || !currentOrganization) return { error: 'User not authenticated or no organization selected' };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('transactions')
         .delete()
         .eq('id', id)
@@ -166,7 +166,7 @@ export function useSupabaseTransactions() {
       return { error: null };
     } catch (error) {
       console.error('Error deleting transaction:', error);
-      return { error: error.message };
+      return { error: (error as Error).message };
     }
   };
 

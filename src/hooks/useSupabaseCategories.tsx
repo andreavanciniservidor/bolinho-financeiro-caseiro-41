@@ -25,7 +25,7 @@ export function useSupabaseCategories() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('categories')
         .select('*')
         .eq('organization_id', currentOrganization.id)
@@ -34,7 +34,7 @@ export function useSupabaseCategories() {
       if (error) throw error;
 
       // Convert Supabase data to Category interface with proper typing
-      const typedCategories: Category[] = (data || []).map(item => ({
+      const typedCategories: Category[] = (data || []).map((item: any) => ({
         id: item.id,
         name: item.name,
         type: item.type as 'income' | 'expense',
@@ -58,7 +58,7 @@ export function useSupabaseCategories() {
     if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('categories')
         .insert([{ 
           ...category, 
@@ -82,7 +82,7 @@ export function useSupabaseCategories() {
       return { data: newCategory, error: null };
     } catch (error) {
       console.error('Error adding category:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: (error as Error).message };
     }
   };
 
