@@ -4,26 +4,84 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DownloadIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from 'recharts';
-
-const monthlyData = [
-  { month: 'ago', receitas: 0, despesas: 0 },
-  { month: 'set', receitas: 0, despesas: 0 },
-  { month: 'out', receitas: 0, despesas: 0 },
-  { month: 'nov', receitas: 0, despesas: 0 },
-  { month: 'dez', receitas: 0, despesas: 0 },
-  { month: 'jan', receitas: 0, despesas: 2500 },
-  { month: 'fev', receitas: 0, despesas: 2800 },
-  { month: 'mar', receitas: 11500, despesas: 11800 },
-  { month: 'abr', receitas: 11800, despesas: 11500 },
-  { month: 'mai', receitas: 9500, despesas: 7200 },
-  { month: 'jun', receitas: 6000, despesas: 1200 },
-  { month: 'jul', receitas: 0, despesas: 1407.88 }
-];
+import { useSupabaseTransactions } from '@/hooks/useSupabaseTransactions';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
+import { useMemo } from 'react';
 
 export function Reports() {
+  const { transactions, isLoading } = useSupabaseTransactions();
+  const { categories } = useSupabaseCategories();
   const [selectedPeriod, setSelectedPeriod] = useState('Ano Inteiro');
   const [selectedYear, setSelectedYear] = useState('2025');
   const [reportType, setReportType] = useState('Visão Geral');
+
+  const { monthlyData, totalIncome, totalExpenses, balance, categoryBreakdown } = useMemo(() => {
+    // Group transactions by month for chart
+    const monthlyMap = new Map();
+    const monthNames = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    
+    // Initialize all months with zero values
+    monthNames.forEach(month => {
+      monthlyMap.set(month, { month, receitas: 0, despesas: 0 });
+    });
+
+    transactions.forEach(t => {
+      const month = new Date(t.date).getMonth();
+      const monthName = monthNames[month];
+      const monthData = monthlyMap.get(monthName);
+      
+      if (t.type === 'income') {
+        monthData.receitas += t.amount;
+      } else {
+        monthData.despesas += Math.abs(t.amount);
+      }
+    });
+
+    const income = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const expenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    // Category breakdown for table
+    const categoryMap = new Map();
+    transactions
+      .filter(t => t.type === 'expense')
+      .forEach(t => {
+        const amount = Math.abs(t.amount);
+        if (categoryMap.has(t.category)) {
+          categoryMap.set(t.category, categoryMap.get(t.category) + amount);
+        } else {
+          categoryMap.set(t.category, amount);
+        }
+      });
+
+    const breakdown = Array.from(categoryMap.entries()).map(([category, spent]) => ({
+      category,
+      orcado: 0, // Would need budget data for this
+      gasto: spent,
+      percentual: 0,
+      diferenca: -spent
+    }));
+
+    return {
+      monthlyData: Array.from(monthlyMap.values()),
+      totalIncome: income,
+      totalExpenses: expenses,
+      balance: income - expenses,
+      categoryBreakdown: breakdown
+    };
+  }, [transactions]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -117,17 +175,19 @@ export function Reports() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
           <h4 className="text-sm font-medium text-gray-600 mb-2">Total de Receitas</h4>
-          <p className="text-2xl font-bold text-green-600">R$ 32003.29</p>
+          <p className="text-2xl font-bold text-green-600">R$ {totalIncome.toFixed(2)}</p>
         </div>
         
         <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
           <h4 className="text-sm font-medium text-gray-600 mb-2">Total de Despesas</h4>
-          <p className="text-2xl font-bold text-red-600">R$ 41695.39</p>
+          <p className="text-2xl font-bold text-red-600">R$ {totalExpenses.toFixed(2)}</p>
         </div>
         
         <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
           <h4 className="text-sm font-medium text-gray-600 mb-2">Saldo Acumulado</h4>
-          <p className="text-2xl font-bold text-red-600">R$ -9692.10</p>
+          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            R$ {balance.toFixed(2)}
+          </p>
         </div>
       </div>
 
@@ -173,27 +233,23 @@ export function Reports() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              <tr>
-                <td className="py-3 px-4">Alimentação</td>
-                <td className="py-3 px-4 text-right">R$ 800,00</td>
-                <td className="py-3 px-4 text-right">R$ 550,00</td>
-                <td className="py-3 px-4 text-right">69%</td>
-                <td className="py-3 px-4 text-right text-green-600">R$ 250,00</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4">Transporte</td>
-                <td className="py-3 px-4 text-right">R$ 400,00</td>
-                <td className="py-3 px-4 text-right">R$ 320,00</td>
-                <td className="py-3 px-4 text-right">80%</td>
-                <td className="py-3 px-4 text-right text-green-600">R$ 80,00</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4">Moradia</td>
-                <td className="py-3 px-4 text-right">R$ 1.500,00</td>
-                <td className="py-3 px-4 text-right">R$ 1.200,00</td>
-                <td className="py-3 px-4 text-right">80%</td>
-                <td className="py-3 px-4 text-right text-green-600">R$ 300,00</td>
-              </tr>
+              {categoryBreakdown.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">
+                    Nenhuma transação encontrada
+                  </td>
+                </tr>
+              ) : (
+                categoryBreakdown.map((item, index) => (
+                  <tr key={index}>
+                    <td className="py-3 px-4">{item.category}</td>
+                    <td className="py-3 px-4 text-right">R$ {item.orcado.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-right">R$ {item.gasto.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-right">{item.percentual}%</td>
+                    <td className="py-3 px-4 text-right text-red-600">R$ {item.diferenca.toFixed(2)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

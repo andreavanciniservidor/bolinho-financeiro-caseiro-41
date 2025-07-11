@@ -9,14 +9,13 @@ import { CalendarIcon, Search, Filter, Plus, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TransactionForm } from '../components/TransactionForm';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useCategories } from '@/hooks/useCategories';
-import { Transaction } from '../types';
+import { useSupabaseTransactions, Transaction } from '@/hooks/useSupabaseTransactions';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { cn } from '@/lib/utils';
 
 export function Transactions() {
-  const { transactions, isLoading, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
-  const { categories } = useCategories();
+  const { transactions, isLoading, addTransaction, updateTransaction, deleteTransaction } = useSupabaseTransactions();
+  const { categories } = useSupabaseCategories();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
@@ -206,59 +205,72 @@ export function Transactions() {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {filteredTransactions.map((transaction) => (
-            <div key={transaction.id} className="p-6 hover:bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full",
-                    transaction.type === 'income' ? "bg-green-500" : "bg-red-500"
-                  )}></div>
-                  <div>
-                    <p className="font-medium text-gray-900">{transaction.description}</p>
-                    <p className="text-sm text-gray-500">
-                      {transaction.category} • {transaction.paymentMethod}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className={cn(
-                      "font-semibold",
-                      transaction.type === 'income' ? "text-green-600" : "text-red-600"
-                    )}>
-                      R$ {Math.abs(transaction.amount).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
-                    </p>
+          {filteredTransactions.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-gray-500">Nenhuma transação encontrada.</p>
+              <Button 
+                onClick={() => setShowForm(true)}
+                className="mt-4 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar primeira transação
+              </Button>
+            </div>
+          ) : (
+            filteredTransactions.map((transaction) => (
+              <div key={transaction.id} className="p-6 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full",
+                      transaction.type === 'income' ? "bg-green-500" : "bg-red-500"
+                    )}></div>
+                    <div>
+                      <p className="font-medium text-gray-900">{transaction.description}</p>
+                      <p className="text-sm text-gray-500">
+                        {transaction.category} • {transaction.paymentMethod}
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingTransaction(transaction);
-                        setShowForm(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTransaction(transaction.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className={cn(
+                        "font-semibold",
+                        transaction.type === 'income' ? "text-green-600" : "text-red-600"
+                      )}>
+                        R$ {Math.abs(transaction.amount).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+                      </p>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingTransaction(transaction);
+                          setShowForm(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
