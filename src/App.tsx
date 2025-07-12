@@ -10,7 +10,7 @@ import { Transactions } from '@/pages/Transactions';
 import { Budgets } from '@/pages/Budgets';
 import { Reports } from '@/pages/Reports';
 import { Categories } from '@/pages/Categories';
-import { useAuth } from '@/hooks/useAuth';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -50,8 +50,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <AppContent />
-        <Toaster />
+        <AuthProvider>
+          <AppContent />
+          <Toaster />
+        </AuthProvider>
       </Router>
     </QueryClientProvider>
   );
