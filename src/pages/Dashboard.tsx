@@ -1,3 +1,4 @@
+
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -7,11 +8,23 @@ import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { useMemo } from 'react';
 
 export function Dashboard() {
-  const { transactions, isLoading: transactionsLoading } = useSupabaseTransactions();
-  const { budgets, isLoading: budgetsLoading } = useSupabaseBudgets();
-  const { categories } = useSupabaseCategories();
+  const { transactions = [], isLoading: transactionsLoading, error: transactionsError } = useSupabaseTransactions();
+  const { budgets = [], isLoading: budgetsLoading } = useSupabaseBudgets();
+  const { categories = [] } = useSupabaseCategories();
+
+  console.log('Dashboard - transactions:', transactions, 'loading:', transactionsLoading, 'error:', transactionsError);
 
   const { totalIncome, totalExpenses, balance, monthlyData, categoryData } = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      return {
+        totalIncome: 0,
+        totalExpenses: 0,
+        balance: 0,
+        monthlyData: [],
+        categoryData: []
+      };
+    }
+
     const income = transactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
@@ -70,16 +83,30 @@ export function Dashboard() {
   }, [transactions, categories]);
 
   const budgetControlPercentage = useMemo(() => {
-    if (budgets.length === 0) return 0;
+    if (!budgets || budgets.length === 0) return 0;
     const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
     const totalSpent = budgets.reduce((sum, b) => sum + b.spentAmount, 0);
     return totalPlanned > 0 ? (totalSpent / totalPlanned) * 100 : 0;
   }, [budgets]);
 
+  if (transactionsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar dados</h2>
+          <p className="text-gray-600">Verifique sua conexão e tente novamente.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (transactionsLoading || budgetsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -88,6 +115,7 @@ export function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">julho de 2025</p>
       </div>
 
@@ -139,7 +167,10 @@ export function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Nenhuma transação encontrada
+              <div className="text-center">
+                <p className="mb-2">Nenhuma transação encontrada</p>
+                <p className="text-sm">Adicione suas primeiras transações para ver os gráficos</p>
+              </div>
             </div>
           )}
           
@@ -210,7 +241,10 @@ export function Dashboard() {
             </>
           ) : (
             <div className="h-[200px] flex items-center justify-center text-gray-500">
-              Nenhuma despesa encontrada
+              <div className="text-center">
+                <p className="mb-1">Nenhuma despesa encontrada</p>
+                <p className="text-sm">Adicione despesas para ver a distribuição</p>
+              </div>
             </div>
           )}
         </div>
@@ -225,8 +259,11 @@ export function Dashboard() {
           </button>
         </div>
         <div className="space-y-4">
-          {budgets.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Nenhum orçamento criado ainda.</p>
+          {!budgets || budgets.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-2">Nenhum orçamento criado ainda.</p>
+              <p className="text-sm text-gray-400">Crie seu primeiro orçamento para controlar seus gastos</p>
+            </div>
           ) : (
             budgets.map((budget) => {
               const percentage = (budget.spentAmount / budget.plannedAmount) * 100;
