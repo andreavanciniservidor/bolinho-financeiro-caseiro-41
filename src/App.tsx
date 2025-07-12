@@ -11,6 +11,7 @@ import { Budgets } from '@/pages/Budgets';
 import { Reports } from '@/pages/Reports';
 import { Categories } from '@/pages/Categories';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { OrganizationProvider } from '@/hooks/useOrganization';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -51,8 +52,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <AppContent />
-          <Toaster />
+          <OrganizationProvider>
+            <AppContent />
+            <Toaster />
+          </OrganizationProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>
