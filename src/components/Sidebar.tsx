@@ -7,7 +7,8 @@ import {
   Bell,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Tag
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Transações', href: '/transactions', icon: CreditCard },
+  { name: 'Categorias', href: '/categories', icon: Tag },
   { name: 'Orçamentos', href: '/budgets', icon: PiggyBank },
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
 ];
