@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { Organization, Profile } from '@/types';
+import { Organization } from '@/types';
 
 interface OrganizationContextType {
   currentOrganization: Organization | null;
@@ -17,7 +17,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const fetchOrganizations = async () => {
     if (!user) {
@@ -28,7 +28,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      // For now, create a default organization since the tables don't exist yet
+      // For now, create a default organization since the organization tables don't exist yet
       // This will be replaced once the organization tables are created
       const defaultOrganization: Organization = {
         id: 'default-org',
@@ -39,7 +39,14 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       };
 
       setOrganizations([defaultOrganization]);
-      setCurrentOrganization(defaultOrganization);
+
+      // Check if user has a preferred organization in their profile
+      if (profile?.current_organization_id) {
+        // For now, just use the default organization
+        setCurrentOrganization(defaultOrganization);
+      } else {
+        setCurrentOrganization(defaultOrganization);
+      }
 
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -54,8 +61,18 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     if (!user) return;
 
     try {
-      // For now, just update the local state
-      // This will be replaced once the organization tables are created
+      // Update user profile with new current organization
+      const { error } = await supabase
+        .from('profiles')
+        .update({ current_organization_id: organizationId })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating current organization:', error);
+        return;
+      }
+
+      // Update local state
       const newCurrentOrg = organizations.find(org => org.id === organizationId);
       if (newCurrentOrg) {
         setCurrentOrganization(newCurrentOrg);
@@ -67,7 +84,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     fetchOrganizations();
-  }, [user]);
+  }, [user, profile]);
 
   const value = {
     currentOrganization,

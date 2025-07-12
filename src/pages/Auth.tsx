@@ -32,15 +32,18 @@ export function Auth() {
     setIsLoading(true);
 
     try {
+      console.log('Tentando fazer login com:', loginData.email);
       const { error } = await signIn(loginData.email, loginData.password);
       
       if (error) {
+        console.error('Erro no login:', error);
         toast({
           title: 'Erro no login',
           description: error.message,
           variant: 'destructive',
         });
       } else {
+        console.log('Login realizado com sucesso');
         toast({
           title: 'Login realizado com sucesso!',
           description: 'Redirecionando...',
@@ -48,6 +51,7 @@ export function Auth() {
         navigate('/');
       }
     } catch (error) {
+      console.error('Erro inesperado no login:', error);
       toast({
         title: 'Erro inesperado',
         description: 'Ocorreu um erro durante o login.',
@@ -63,6 +67,7 @@ export function Auth() {
     setIsLoading(true);
 
     try {
+      console.log('Tentando criar conta para:', signupData.email);
       const { error } = await signUp(
         signupData.email,
         signupData.password,
@@ -71,18 +76,21 @@ export function Auth() {
       );
       
       if (error) {
+        console.error('Erro no cadastro:', error);
         toast({
           title: 'Erro no cadastro',
           description: error.message,
           variant: 'destructive',
         });
       } else {
+        console.log('Cadastro realizado com sucesso');
         toast({
           title: 'Cadastro realizado com sucesso!',
           description: 'Verifique seu email para confirmar a conta.',
         });
       }
     } catch (error) {
+      console.error('Erro inesperado no cadastro:', error);
       toast({
         title: 'Erro inesperado',
         description: 'Ocorreu um erro durante o cadastro.',
