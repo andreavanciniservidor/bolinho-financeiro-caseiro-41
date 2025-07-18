@@ -1,5 +1,6 @@
+
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../utils/test-utils';
 import { useForm } from 'react-hook-form';
 import { 
   Form, 

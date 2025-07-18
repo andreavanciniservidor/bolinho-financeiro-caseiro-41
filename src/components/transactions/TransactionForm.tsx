@@ -280,7 +280,12 @@ export function TransactionForm({ isOpen, onClose, transaction, onSuccess }: Tra
       category_id: '',
       payment_method: 'Dinheiro',
       is_recurring: false,
+      recurrence_rule: {
+        frequency: 'monthly',
+        interval: 1,
+      },
       installments: 1,
+      installment_number: 1,
       observations: '',
       tags: []
     });

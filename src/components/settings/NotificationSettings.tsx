@@ -1,267 +1,189 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Bell, Mail, MessageSquare, AlertCircle, CheckCircle2, Smartphone, Monitor } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useUserSettings } from '@/hooks/useUserSettings';
-import { Bell, BellOff, Clock, Loader2, Mail, Smartphone } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from '@/hooks/use-toast';
 
 export function NotificationSettings() {
-  const { toast } = useToast();
-  const { 
-    settings, 
-    isLoading, 
-    updateNotifications,
-    isUpdatingNotifications
-  } = useUserSettings();
-
-  const [emailNotifications, setEmailNotifications] = useState(
-    settings?.notifications?.email ?? true
-  );
-  const [pushNotifications, setPushNotifications] = useState(
-    settings?.notifications?.push ?? true
-  );
-  const [budgetAlerts, setBudgetAlerts] = useState(
-    settings?.notifications?.budget_alerts ?? true
-  );
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [browserNotifications, setBrowserNotifications] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  
+  // Specific notification types
   const [transactionAlerts, setTransactionAlerts] = useState(true);
-  const [reportAlerts, setReportAlerts] = useState(true);
-  const [notificationTime, setNotificationTime] = useState('09:00');
-  const [notificationFrequency, setNotificationFrequency] = useState('daily');
-  const [isSaving, setIsSaving] = useState(false);
-  const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null);
+  const [budgetAlerts, setBudgetAlerts] = useState(true);
+  const [securityAlerts, setSecurityAlerts] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
+  const [weeklyReports, setWeeklyReports] = useState(true);
+  const [monthlyReports, setMonthlyReports] = useState(true);
+  
+  // Notification timing
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
+  const [quietHoursStart, setQuietHoursStart] = useState('22:00');
+  const [quietHoursEnd, setQuietHoursEnd] = useState('08:00');
+  const [notificationFrequency, setNotificationFrequency] = useState('immediate');
 
-  // Check push notification permission
-  const checkPushPermission = async () => {
-    if (!('Notification' in window)) {
-      toast({
-        title: 'Notificações não suportadas',
-        description: 'Seu navegador não suporta notificações push.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  useEffect(() => {
+    const checkPermission = async () => {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+      }
+    };
 
-    const permission = await Notification.requestPermission();
-    setPushPermission(permission);
+    checkPermission();
+  }, []);
 
-    if (permission === 'granted') {
-      toast({
-        title: 'Notificações permitidas',
-        description: 'Você receberá notificações push quando relevante.',
-      });
-    } else if (permission === 'denied') {
-      toast({
-        title: 'Notificações bloqueadas',
-        description: 'Você precisa permitir notificações nas configurações do navegador.',
-        variant: 'destructive',
-      });
-      setPushNotifications(false);
-    }
-  };
-
-  // Handle email notifications toggle
-  const handleEmailToggle = async (checked: boolean) => {
-    setEmailNotifications(checked);
-    try {
-      await updateNotifications({ email: checked });
-      toast({
-        title: checked ? 'Notificações por email ativadas' : 'Notificações por email desativadas',
-        description: checked 
-          ? 'Você receberá notificações importantes por email.' 
-          : 'Você não receberá mais notificações por email.',
-      });
-    } catch (error) {
-      setEmailNotifications(!checked); // Revert on error
-      toast({
-        title: 'Erro ao atualizar configurações',
-        description: 'Não foi possível atualizar as notificações por email.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Handle push notifications toggle
-  const handlePushToggle = async (checked: boolean) => {
-    if (checked && pushPermission !== 'granted') {
-      await checkPushPermission();
-      if (pushPermission !== 'granted') {
+  const handleBrowserNotificationChange = async (enabled: boolean) => {
+    if (enabled && (notificationPermission === 'default' || notificationPermission === 'denied')) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission !== 'granted') {
+        toast({
+          title: 'Permissão negada',
+          description: 'Para receber notificações, você precisa permitir nas configurações do navegador.',
+          variant: 'destructive'
+        });
         return;
       }
     }
 
-    setPushNotifications(checked);
-    try {
-      await updateNotifications({ push: checked });
-      toast({
-        title: checked ? 'Notificações push ativadas' : 'Notificações push desativadas',
-        description: checked 
-          ? 'Você receberá notificações push quando relevante.' 
-          : 'Você não receberá mais notificações push.',
-      });
-    } catch (error) {
-      setPushNotifications(!checked); // Revert on error
-      toast({
-        title: 'Erro ao atualizar configurações',
-        description: 'Não foi possível atualizar as notificações push.',
-        variant: 'destructive',
-      });
-    }
+    setBrowserNotifications(enabled);
+    // Save settings logic here
   };
 
-  // Handle budget alerts toggle
-  const handleBudgetAlertsToggle = async (checked: boolean) => {
-    setBudgetAlerts(checked);
-    try {
-      await updateNotifications({ budget_alerts: checked });
-      toast({
-        title: checked ? 'Alertas de orçamento ativados' : 'Alertas de orçamento desativados',
-        description: checked 
-          ? 'Você receberá alertas quando seus orçamentos estiverem próximos do limite.' 
-          : 'Você não receberá mais alertas de orçamento.',
-      });
-    } catch (error) {
-      setBudgetAlerts(!checked); // Revert on error
-      toast({
-        title: 'Erro ao atualizar configurações',
-        description: 'Não foi possível atualizar os alertas de orçamento.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Handle save all settings
-  const handleSaveAll = async () => {
-    setIsSaving(true);
-    try {
-      // In a real implementation, we would save all settings at once
-      // For now, we'll just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: 'Configurações salvas',
-        description: 'Suas preferências de notificação foram atualizadas com sucesso.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Erro ao salvar configurações',
-        description: 'Não foi possível salvar suas preferências de notificação.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Test notification
-  const sendTestNotification = () => {
-    if (emailNotifications) {
-      toast({
-        title: 'Email de teste enviado',
-        description: 'Um email de teste foi enviado para seu endereço cadastrado.',
-      });
-    }
-
-    if (pushNotifications && pushPermission === 'granted') {
-      // Create and show a test notification
-      const notification = new Notification('Notificação de teste', {
+  const handleTestNotification = () => {
+    if (browserNotifications && notificationPermission === 'granted') {
+      new Notification('Teste de Notificação', {
         body: 'Esta é uma notificação de teste do Finanças+',
         icon: '/favicon.ico'
       });
-
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      
+      toast({
+        title: 'Notificação enviada',
+        description: 'Verifique se você recebeu a notificação de teste.'
+      });
+    } else {
+      toast({
+        title: 'Notificações desabilitadas',
+        description: 'Ative as notificações do navegador primeiro.',
+        variant: 'destructive'
+      });
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const getPermissionBadge = () => {
+    switch (notificationPermission) {
+      case 'granted':
+        return <Badge className="bg-green-100 text-green-800">Permitido</Badge>;
+      case 'denied':
+        return <Badge variant="destructive">Negado</Badge>;
+      default:
+        return <Badge variant="secondary">Pendente</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* Notification Channels */}
       <Card>
         <CardHeader>
-          <CardTitle>Canais de Notificação</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-blue-600" />
+            Canais de Notificação
+          </CardTitle>
           <CardDescription>
             Configure como você deseja receber notificações
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Mail className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <Label htmlFor="email-notifications" className="font-medium">Notificações por Email</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receba notificações importantes por email
-                  </p>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Mail className="h-5 w-5 text-gray-500" />
+              <div>
+                <Label htmlFor="email-notifications" className="font-medium">
+                  Notificações por E-mail
+                </Label>
+                <p className="text-sm text-gray-600">
+                  Receba notificações importantes por e-mail
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="email-notifications"
+              checked={emailNotifications}
+              onCheckedChange={setEmailNotifications}
+            />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Monitor className="h-5 w-5 text-gray-500" />
+              <div>
+                <Label htmlFor="browser-notifications" className="font-medium">
+                  Notificações do Navegador
+                </Label>
+                <p className="text-sm text-gray-600">
+                  Receba notificações em tempo real no navegador
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-500">Status:</span>
+                  {getPermissionBadge()}
                 </div>
               </div>
-              <Switch 
-                id="email-notifications" 
-                checked={emailNotifications}
-                onCheckedChange={handleEmailToggle}
-                disabled={isUpdatingNotifications}
-              />
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="browser-notifications"
+                checked={browserNotifications}
+                onCheckedChange={handleBrowserNotificationChange}
+              />
+              {browserNotifications && notificationPermission === 'granted' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestNotification}
+                >
+                  Testar
+                </Button>
+              )}
+            </div>
+          </div>
 
-            <Separator />
+          <Separator />
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <Label htmlFor="push-notifications" className="font-medium">Notificações Push</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receba notificações em tempo real no seu navegador
-                  </p>
-                </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Smartphone className="h-5 w-5 text-gray-500" />
+              <div>
+                <Label htmlFor="push-notifications" className="font-medium">
+                  Notificações Push
+                </Label>
+                <p className="text-sm text-gray-600">
+                  Receba notificações no seu dispositivo móvel
+                </p>
               </div>
-              <Switch 
-                id="push-notifications" 
-                checked={pushNotifications}
-                onCheckedChange={handlePushToggle}
-                disabled={isUpdatingNotifications}
-              />
             </div>
-
-            {pushNotifications && pushPermission !== 'granted' && (
-              <Alert variant="destructive" className="mt-2">
-                <BellOff className="h-4 w-4" />
-                <AlertTitle>Permissão necessária</AlertTitle>
-                <AlertDescription>
-                  Você precisa permitir notificações no seu navegador para receber alertas.
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={checkPushPermission}
-                  >
-                    Permitir notificações
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
+            <Switch
+              id="push-notifications"
+              checked={pushNotifications}
+              onCheckedChange={setPushNotifications}
+            />
           </div>
         </CardContent>
       </Card>
 
+      {/* Notification Types */}
       <Card>
         <CardHeader>
           <CardTitle>Tipos de Notificação</CardTitle>
@@ -269,148 +191,208 @@ export function NotificationSettings() {
             Escolha quais tipos de notificação você deseja receber
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="budget-alerts" className="font-medium">Alertas de Orçamento</Label>
-                <p className="text-sm text-muted-foreground">
-                  Notificações quando seus orçamentos estiverem próximos do limite
-                </p>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900">Alertas Financeiros</h4>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="transaction-alerts" className="font-medium">
+                    Transações
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Notificações sobre novas transações
+                  </p>
+                </div>
+                <Switch
+                  id="transaction-alerts"
+                  checked={transactionAlerts}
+                  onCheckedChange={setTransactionAlerts}
+                />
               </div>
-              <Switch 
-                id="budget-alerts" 
-                checked={budgetAlerts}
-                onCheckedChange={handleBudgetAlertsToggle}
-                disabled={isUpdatingNotifications}
-              />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="budget-alerts" className="font-medium">
+                    Orçamentos
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Alertas quando orçamentos estão próximos do limite
+                  </p>
+                </div>
+                <Switch
+                  id="budget-alerts"
+                  checked={budgetAlerts}
+                  onCheckedChange={setBudgetAlerts}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="security-alerts" className="font-medium">
+                    Segurança
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Alertas sobre atividades de segurança
+                  </p>
+                </div>
+                <Switch
+                  id="security-alerts"
+                  checked={securityAlerts}
+                  onCheckedChange={setSecurityAlerts}
+                />
+              </div>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="transaction-alerts" className="font-medium">Alertas de Transação</Label>
-                <p className="text-sm text-muted-foreground">
-                  Notificações sobre novas transações e movimentações
-                </p>
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-gray-900">Relatórios e Marketing</h4>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="weekly-reports" className="font-medium">
+                    Relatórios Semanais
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Resumo semanal das suas finanças
+                  </p>
+                </div>
+                <Switch
+                  id="weekly-reports"
+                  checked={weeklyReports}
+                  onCheckedChange={setWeeklyReports}
+                />
               </div>
-              <Switch 
-                id="transaction-alerts" 
-                checked={transactionAlerts}
-                onCheckedChange={setTransactionAlerts}
-              />
-            </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="report-alerts" className="font-medium">Relatórios Agendados</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba relatórios financeiros periódicos
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="monthly-reports" className="font-medium">
+                    Relatórios Mensais
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Resumo mensal das suas finanças
+                  </p>
+                </div>
+                <Switch
+                  id="monthly-reports"
+                  checked={monthlyReports}
+                  onCheckedChange={setMonthlyReports}
+                />
               </div>
-              <Switch 
-                id="report-alerts" 
-                checked={reportAlerts}
-                onCheckedChange={setReportAlerts}
-              />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="marketing-emails" className="font-medium">
+                    E-mails Promocionais
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Novidades e promoções do Finanças+
+                  </p>
+                </div>
+                <Switch
+                  id="marketing-emails"
+                  checked={marketingEmails}
+                  onCheckedChange={setMarketingEmails}
+                />
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Notification Timing */}
       <Card>
         <CardHeader>
-          <CardTitle>Preferências de Entrega</CardTitle>
+          <CardTitle>Horários e Frequência</CardTitle>
           <CardDescription>
-            Configure quando e com que frequência deseja receber notificações
+            Configure quando e com que frequência receber notificações
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="notification-time">Horário de Notificações</Label>
-              <Select
-                value={notificationTime}
-                onValueChange={setNotificationTime}
-              >
-                <SelectTrigger id="notification-time" className="w-full">
-                  <SelectValue placeholder="Selecione o horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="09:00">09:00 (Manhã)</SelectItem>
-                  <SelectItem value="12:00">12:00 (Meio-dia)</SelectItem>
-                  <SelectItem value="18:00">18:00 (Tarde)</SelectItem>
-                  <SelectItem value="21:00">21:00 (Noite)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Horário preferencial para receber notificações agendadas
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="quiet-hours" className="font-medium">
+                Horário Silencioso
+              </Label>
+              <p className="text-sm text-gray-600">
+                Não receber notificações durante determinados horários
               </p>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="notification-frequency">Frequência de Resumos</Label>
-              <Select
-                value={notificationFrequency}
-                onValueChange={setNotificationFrequency}
-              >
-                <SelectTrigger id="notification-frequency" className="w-full">
-                  <SelectValue placeholder="Selecione a frequência" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Diário</SelectItem>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Com que frequência você deseja receber resumos financeiros
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="quiet-hours" className="font-medium">Modo Não Perturbe</Label>
-                <p className="text-sm text-muted-foreground">
-                  Silenciar notificações durante a noite (22:00 - 08:00)
-                </p>
-              </div>
-              <Switch id="quiet-hours" defaultChecked={true} />
-            </div>
+            <Switch
+              id="quiet-hours"
+              checked={quietHoursEnabled}
+              onCheckedChange={setQuietHoursEnabled}
+            />
           </div>
 
-          <div className="flex justify-between pt-4">
-            <Button
-              variant="outline"
-              onClick={sendTestNotification}
-              disabled={(!emailNotifications && !pushNotifications) || isSaving}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Enviar notificação de teste
-            </Button>
-            
-            <Button
-              onClick={handleSaveAll}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Clock className="h-4 w-4 mr-2" />
-                  Salvar preferências
-                </>
-              )}
-            </Button>
+          {quietHoursEnabled && (
+            <div className="grid grid-cols-2 gap-4 ml-6">
+              <div className="space-y-2">
+                <Label htmlFor="quiet-start">Início</Label>
+                <input
+                  id="quiet-start"
+                  type="time"
+                  value={quietHoursStart}
+                  onChange={(e) => setQuietHoursStart(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quiet-end">Fim</Label>
+                <input
+                  id="quiet-end"
+                  type="time"
+                  value={quietHoursEnd}
+                  onChange={(e) => setQuietHoursEnd(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label htmlFor="notification-frequency">Frequência de Notificações</Label>
+            <Select value={notificationFrequency} onValueChange={setNotificationFrequency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="immediate">Imediata</SelectItem>
+                <SelectItem value="hourly">A cada hora</SelectItem>
+                <SelectItem value="daily">Diária</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-600">
+              Controle com que frequência você recebe notificações não urgentes
+            </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Browser Notification Help */}
+      {notificationPermission === 'denied' && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Notificações bloqueadas:</strong> Para receber notificações do navegador, 
+            você precisa permitir nas configurações do seu navegador. Clique no ícone de cadeado 
+            na barra de endereços e permita notificações para este site.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {browserNotifications && notificationPermission === 'granted' && (
+        <Alert>
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Notificações ativas:</strong> Você está recebendo notificações do navegador. 
+            Você pode testar clicando no botão "Testar" ao lado da configuração de notificações do navegador.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

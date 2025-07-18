@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionService, TransactionFilters, PaginationOptions } from '@/services/transactionService';
@@ -23,14 +22,10 @@ export interface Transaction {
   updated_at: string;
 }
 
-export function useSupabaseTransactions(
-  filters?: TransactionFilters,
-  pagination?: PaginationOptions
-) {
+export function useSupabaseTransactions(options: PaginationOptions = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  const queryKey = ['transactions', filters, pagination];
+  const { page = 1, limit = 50, sortBy = 'date', sortOrder = 'desc', filters } = options;
 
   const {
     data: transactionData,
@@ -38,11 +33,11 @@ export function useSupabaseTransactions(
     error,
     refetch
   } = useQuery({
-    queryKey,
-    queryFn: () => transactionService.getTransactions(filters, pagination),
+    queryKey: ['transactions', { page, limit, sortBy, sortOrder, filters }],
+    queryFn: () => transactionService.getTransactions({ page, limit, sortBy, sortOrder, filters }),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const transactions = transactionData?.data || [];

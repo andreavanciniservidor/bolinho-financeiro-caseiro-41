@@ -349,6 +349,7 @@ export function TransactionList({
       <div className="h-96">
         <List
           height={384} // 96 * 4 = 384px (h-96)
+          width="100%"
           itemCount={transactions.length}
           itemSize={80}
           itemData={itemData}
