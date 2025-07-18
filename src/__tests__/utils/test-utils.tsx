@@ -5,8 +5,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme-provider';
 
-// Import testing utilities directly
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+// Import testing utilities from the correct module
+import { screen, fireEvent, waitFor } from '@testing-library/dom';
 
 // Criar um cliente de consulta para testes
 const createTestQueryClient = () => new QueryClient({

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +12,11 @@ export function Budgets() {
   const [editingBudget, setEditingBudget] = useState<Budget | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleAddBudget = (newBudget: Omit<Budget, 'id' | 'spentAmount'>) => {
+  const handleAddBudget = (newBudget: Omit<Budget, 'id' | 'spent_amount'>) => {
     addBudget(newBudget);
   };
 
-  const handleEditBudget = (updatedBudget: Omit<Budget, 'id' | 'spentAmount'>) => {
+  const handleEditBudget = (updatedBudget: Omit<Budget, 'id' | 'spent_amount'>) => {
     if (editingBudget) {
       updateBudget(editingBudget.id, updatedBudget);
       setEditingBudget(undefined);

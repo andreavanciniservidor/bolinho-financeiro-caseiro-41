@@ -131,6 +131,11 @@ export function Dashboard() {
     type: t.type as 'income' | 'expense'
   }));
 
+  const typedBudgets = budgets.map(b => ({
+    ...b,
+    type: b.type as 'income' | 'expense'
+  }));
+
   return (
     <Stack space="lg">
       {/* Header */}
@@ -193,7 +198,7 @@ export function Dashboard() {
             </button>
           </div>
           <BudgetProgress 
-            budgets={budgets}
+            budgets={typedBudgets}
             loading={budgetsLoading}
             onManageBudgets={() => navigate('/budgets')}
           />
@@ -211,7 +216,7 @@ export function Dashboard() {
           </div>
           <RecentTransactions 
             transactions={typedTransactions}
-            loading={transactionsLoading}
+            isLoading={transactionsLoading}
             limit={5}
             onViewAll={() => navigate('/transactions')}
           />

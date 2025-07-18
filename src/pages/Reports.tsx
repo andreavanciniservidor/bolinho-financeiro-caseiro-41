@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -10,7 +9,7 @@ import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { CategoryPieChart } from '@/components/reports/CategoryPieChart';
 import { MonthlyComparisonChart } from '@/components/reports/MonthlyComparisonChart';
 import { ExpenseTrendChart } from '@/components/reports/ExpenseTrendChart';
-import { ReportFilters } from '@/components/reports/ReportFilters';
+import { ReportFilters as ReportFiltersComponent } from '@/components/reports/ReportFilters';
 import { ReportExport } from '@/components/reports/ReportExport';
 import { PageHeader, ContentSection, GridLayout, CardLayout, Stack } from '@/components/layout/Layout';
 
@@ -58,9 +57,9 @@ export function Reports() {
 
   const balance = totalIncome - totalExpenses;
 
-  // Prepare data for charts
+  // Prepare data for charts with proper type casting
   const expensesByCategory = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => (t.type as 'income' | 'expense') === 'expense')
     .reduce((acc, transaction) => {
       const categoryName = transaction.category?.name || 'Sem categoria';
       acc[categoryName] = (acc[categoryName] || 0) + Math.abs(transaction.amount);
@@ -102,6 +101,7 @@ export function Reports() {
 
   return (
     <Stack space="lg">
+      {/* Header */}
       <PageHeader 
         title="Relatórios" 
         description="Análise detalhada das suas finanças e tendências de gastos"
@@ -110,9 +110,7 @@ export function Reports() {
       {/* Filters */}
       <ContentSection>
         <CardLayout padding="md">
-          <ReportFilters
-            filters={filters}
-            onFiltersChange={setFilters}
+          <ReportFiltersComponent
             categories={formattedCategories}
           />
         </CardLayout>
@@ -179,7 +177,7 @@ export function Reports() {
             <PieChart className="h-5 w-5 text-gray-500" />
           </div>
           <CategoryPieChart 
-            data={categoryData}
+            categories={categoryData}
             height={300}
           />
         </CardLayout>
@@ -208,6 +206,7 @@ export function Reports() {
               id: t.id,
               amount: Math.abs(t.amount),
               type: t.type as 'income' | 'expense',
+              date: t.date,
               category: t.category?.name,
               category_id: t.category_id,
               category_color: t.category?.color
@@ -226,7 +225,7 @@ export function Reports() {
               <p className="text-gray-600">Baixe seus dados financeiros em diferentes formatos</p>
             </div>
             <ReportExport 
-              transactions={transactions.map(t => ({
+              data={transactions.map(t => ({
                 id: t.id,
                 amount: Math.abs(t.amount),
                 type: t.type as 'income' | 'expense',

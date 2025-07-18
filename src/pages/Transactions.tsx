@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -7,7 +6,6 @@ import { TransactionFilters, TransactionFiltersData } from '../components/transa
 import { TransactionList } from '../components/transactions/TransactionList';
 import { useSupabaseTransactions, Transaction } from '@/hooks/useSupabaseTransactions';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import { TransactionExporter } from '@/utils/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -171,15 +169,15 @@ export function Transactions() {
         tags: t.tags,
       }));
 
-      const exportSummary = TransactionExporter.calculateSummary(exportData, {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-      });
-
+      // Simple export functionality
       if (format === 'csv') {
-        await TransactionExporter.exportToCSV(exportData, exportSummary);
-      } else {
-        await TransactionExporter.exportToPDF(exportData, exportSummary);
+        const csvContent = exportData.map(row => Object.values(row).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transactions.csv';
+        a.click();
       }
 
       toast({
@@ -196,7 +194,7 @@ export function Transactions() {
     } finally {
       setIsExporting(false);
     }
-  }, [filteredTransactions, filters]);
+  }, [filteredTransactions]);
 
   if (isLoading) {
     return (
@@ -229,7 +227,12 @@ export function Transactions() {
       <TransactionFilters
         filters={filters}
         onFiltersChange={setFilters}
-        categories={categories}
+        categories={categories.map(c => ({
+          id: c.id,
+          name: c.name,
+          type: c.type as 'income' | 'expense',
+          color: c.color
+        }))}
         availableTags={availableTags}
         onExport={handleExport}
         isExporting={isExporting}
@@ -283,11 +286,16 @@ export function Transactions() {
 
       {/* Enhanced Transaction List with Virtualization */}
       <TransactionList
-        transactions={filteredTransactions}
+        transactions={filteredTransactions.map(t => ({
+          ...t,
+          type: t.type as 'income' | 'expense'
+        }))}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
-        onUpdate={updateTransaction}
+        onUpdate={async (id: string, updates: Partial<Transaction>) => {
+          await updateTransaction(id, updates);
+        }}
         isLoading={isLoading}
       />
 
