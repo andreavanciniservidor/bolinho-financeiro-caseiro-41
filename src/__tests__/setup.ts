@@ -1,7 +1,8 @@
+
 // Configuração global para testes
 
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // Mock para matchMedia
 Object.defineProperty(window, 'matchMedia', {
