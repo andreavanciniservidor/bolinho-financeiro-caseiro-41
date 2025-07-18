@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -44,34 +45,9 @@ class BudgetService {
   }
 
   async createBudget(budget: BudgetInsert) {
-    // Set period dates based on period_type if not provided
-    const now = new Date();
-    let periodStart = budget.period_start;
-    let periodEnd = budget.period_end;
-
-    if (!periodStart || !periodEnd) {
-      switch (budget.period_type || 'monthly') {
-        case 'weekly':
-          periodStart = this.getStartOfWeek(now).toISOString().split('T')[0];
-          periodEnd = this.getEndOfWeek(now).toISOString().split('T')[0];
-          break;
-        case 'yearly':
-          periodStart = this.getStartOfYear(now).toISOString().split('T')[0];
-          periodEnd = this.getEndOfYear(now).toISOString().split('T')[0];
-          break;
-        default: // monthly
-          periodStart = this.getStartOfMonth(now).toISOString().split('T')[0];
-          periodEnd = this.getEndOfMonth(now).toISOString().split('T')[0];
-      }
-    }
-
     const { data, error } = await supabase
       .from('budgets')
-      .insert({
-        ...budget,
-        period_start: periodStart,
-        period_end: periodEnd
-      })
+      .insert(budget)
       .select(`
         *,
         category:categories(id, name, color, type)
@@ -167,43 +143,12 @@ class BudgetService {
         .from('transactions')
         .select('amount')
         .eq('category_id', budget.category_id)
-        .eq('type', 'expense')
-        .gte('date', budget.period_start)
-        .lte('date', budget.period_end);
+        .eq('type', 'expense');
 
       const spentAmount = transactions?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
 
       await this.updateBudget(budget.id, { spent_amount: spentAmount });
     }
-  }
-
-  // Helper methods for date calculations
-  private getStartOfWeek(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day;
-    return new Date(d.setDate(diff));
-  }
-
-  private getEndOfWeek(date: Date): Date {
-    const d = this.getStartOfWeek(date);
-    return new Date(d.setDate(d.getDate() + 6));
-  }
-
-  private getStartOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-  }
-
-  private getEndOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  }
-
-  private getStartOfYear(date: Date): Date {
-    return new Date(date.getFullYear(), 0, 1);
-  }
-
-  private getEndOfYear(date: Date): Date {
-    return new Date(date.getFullYear(), 11, 31);
   }
 }
 

@@ -3,16 +3,7 @@ import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { budgetService, BudgetWithCategory } from '@/services/budgetService';
 import { useAuth } from './useAuth';
-
-export interface Budget {
-  id: string;
-  name: string;
-  category?: string;
-  plannedAmount: number;
-  spentAmount: number;
-  alertPercentage: number;
-  isActive: boolean;
-}
+import type { Budget } from '@/types';
 
 export function useSupabaseBudgets() {
   const { user } = useAuth();
@@ -30,14 +21,20 @@ export function useSupabaseBudgets() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const budgets = budgetData?.map(b => ({
+  // Map the data to match our Budget interface (using snake_case as per database)
+  const budgets: Budget[] = budgetData?.map(b => ({
     id: b.id,
     name: b.name,
     category: b.category?.name || 'Sem categoria',
-    plannedAmount: b.planned_amount,
-    spentAmount: b.spent_amount,
-    alertPercentage: b.alert_percentage,
-    isActive: b.is_active
+    category_id: b.category_id,
+    planned_amount: b.planned_amount,
+    spent_amount: b.spent_amount,
+    alert_percentage: b.alert_percentage,
+    is_active: b.is_active,
+    user_id: b.user_id,
+    organization_id: b.organization_id,
+    created_at: b.created_at || new Date().toISOString(),
+    updated_at: b.updated_at || new Date().toISOString()
   })) || [];
 
   const addBudgetMutation = useMutation({

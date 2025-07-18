@@ -35,9 +35,6 @@ export interface Budget {
   spent_amount: number;
   alert_percentage: number;
   is_active: boolean;
-  period_start?: string;
-  period_end?: string;
-  period_type?: string;
   user_id: string;
   organization_id?: string;
   created_at: string;

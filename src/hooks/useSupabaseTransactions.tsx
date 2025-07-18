@@ -39,7 +39,6 @@ export interface TransactionFilters {
 }
 
 export interface PaginationOptions {
-  page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -49,7 +48,7 @@ export interface PaginationOptions {
 export function useSupabaseTransactions(options: PaginationOptions = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { page = 1, limit = 50, sortBy = 'date', sortOrder = 'desc', filters } = options;
+  const { limit = 50, sortBy = 'date', sortOrder = 'desc', filters } = options;
 
   const {
     data: transactionData,
@@ -57,14 +56,21 @@ export function useSupabaseTransactions(options: PaginationOptions = {}) {
     error,
     refetch
   } = useQuery({
-    queryKey: ['transactions', { page, limit, sortBy, sortOrder, filters }],
-    queryFn: () => transactionService.getTransactions(filters, { page, limit }),
+    queryKey: ['transactions', { limit, sortBy, sortOrder, filters }],
+    queryFn: () => transactionService.getTransactions(filters, { limit }),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const transactions = transactionData?.data || [];
+  // Add missing properties to transactions
+  const transactions = (transactionData?.data || []).map(t => ({
+    ...t,
+    installment_number: t.installment_number || 1,
+    tags: t.tags || [],
+    type: t.type as 'income' | 'expense'
+  }));
+  
   const totalCount = transactionData?.count || 0;
 
   // Mutations

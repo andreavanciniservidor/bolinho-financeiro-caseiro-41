@@ -114,7 +114,6 @@ export function Reports() {
           <ReportFiltersComponent
             categories={formattedCategories}
             onFilterChange={(newFilters) => {
-              // Handle filter changes if needed
               console.log('Filter changed:', newFilters);
             }}
           />
@@ -182,7 +181,7 @@ export function Reports() {
             <PieChart className="h-5 w-5 text-gray-500" />
           </div>
           <CategoryPieChart 
-            data={categoryData}
+            categories={categoryData}
             height={300}
           />
         </CardLayout>

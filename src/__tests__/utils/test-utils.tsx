@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme-provider';
 
 // Import testing utilities from the correct modules
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/dom';
 
 // Criar um cliente de consulta para testes
 const createTestQueryClient = () => new QueryClient({
