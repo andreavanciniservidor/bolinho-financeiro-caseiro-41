@@ -22,6 +22,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          organization_id: string | null
           planned_amount: number
           spent_amount: number | null
           updated_at: string | null
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          organization_id?: string | null
           planned_amount: number
           spent_amount?: number | null
           updated_at?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          organization_id?: string | null
           planned_amount?: number
           spent_amount?: number | null
           updated_at?: string | null
@@ -59,6 +62,13 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_budgets_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -67,6 +77,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          organization_id: string | null
           type: string
           user_id: string | null
         }
@@ -75,6 +86,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           type: string
           user_id?: string | null
         }
@@ -83,8 +95,41 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           type?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_categories_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -126,14 +171,11 @@ export type Database = {
           date: string
           description: string
           id: string
-          installment_number: number | null
           installments: number | null
           is_recurring: boolean | null
           observations: string | null
-          parent_transaction_id: string | null
+          organization_id: string | null
           payment_method: string
-          recurrence_rule: Json | null
-          tags: string[] | null
           type: string
           updated_at: string | null
           user_id: string
@@ -145,14 +187,11 @@ export type Database = {
           date: string
           description: string
           id?: string
-          installment_number?: number | null
           installments?: number | null
           is_recurring?: boolean | null
           observations?: string | null
-          parent_transaction_id?: string | null
+          organization_id?: string | null
           payment_method?: string
-          recurrence_rule?: Json | null
-          tags?: string[] | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -164,19 +203,23 @@ export type Database = {
           date?: string
           description?: string
           id?: string
-          installment_number?: number | null
           installments?: number | null
           is_recurring?: boolean | null
           observations?: string | null
-          parent_transaction_id?: string | null
+          organization_id?: string | null
           payment_method?: string
-          recurrence_rule?: Json | null
-          tags?: string[] | null
           type?: string
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_transactions_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]

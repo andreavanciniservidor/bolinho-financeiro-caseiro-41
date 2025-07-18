@@ -1,5 +1,5 @@
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
@@ -19,16 +19,17 @@ import { logError } from '@/utils/errorUtils';
 import { initMonitoring, setUser, clearUser } from '@/services/monitoringService';
 import { initAnalytics } from '@/services/analyticsService';
 import { initWebVitals } from '@/utils/webVitals';
-import './App.css';
 
-// Lazy loading para páginas
-const Auth = lazy(() => import('@/pages/Auth'));
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const Transactions = lazy(() => import('@/pages/Transactions'));
-const Budgets = lazy(() => import('@/pages/Budgets'));
-const Reports = lazy(() => import('@/pages/Reports'));
-const Categories = lazy(() => import('@/pages/Categories'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
+// Import pages directly instead of lazy loading to avoid the primitive value error
+import Auth from '@/pages/Auth';
+import { Dashboard } from '@/pages/Dashboard';
+import Transactions from '@/pages/Transactions';
+import Budgets from '@/pages/Budgets';
+import Reports from '@/pages/Reports';
+import { Categories } from '@/pages/Categories';
+import NotFound from '@/pages/NotFound';
+
+import './App.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,47 +106,45 @@ function AppContent() {
         />
         
         <MainContent>
-          <Suspense fallback={<LoadingFallback message="Carregando página..." />}>
-            <Routes>
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Dashboard />
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              <Route path="/transactions" element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Transactions />
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              <Route path="/budgets" element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Budgets />
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              <Route path="/reports" element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Reports />
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              <Route path="/categories" element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Categories />
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              } />
-              {/* Catch-all route for 404 errors */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <Routes>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <Dashboard />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="/transactions" element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <Transactions />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="/budgets" element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <Budgets />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <Reports />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="/categories" element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <Categories />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            {/* Catch-all route for 404 errors */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </MainContent>
       </div>
     </Layout>
