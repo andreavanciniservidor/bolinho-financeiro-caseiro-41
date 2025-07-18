@@ -1,9 +1,10 @@
+
 import { ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { expect } from 'vitest';
 
-// Estender o expect do Jest para incluir o matcher toHaveNoViolations
+// Estender o expect do Vitest para incluir o matcher toHaveNoViolations
 expect.extend(toHaveNoViolations);
 
 /**

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SkipLink } from '@/components/accessibility/SkipLink';
 import { testAccessibility } from '../utils/accessibility-utils';
@@ -40,9 +41,7 @@ describe('SkipLink Accessibility', () => {
     // Simular clique no link
     fireEvent.click(link);
     
-    // Verificar se o foco foi movido para o elemento alvo
-    // Nota: Em um ambiente de teste, a navegação real não ocorre,
-    // então verificamos se o evento foi disparado corretamente
+    // Verificar se o evento foi disparado corretamente
     expect(link).toHaveAttribute('href', '#main');
     
     // Limpar
