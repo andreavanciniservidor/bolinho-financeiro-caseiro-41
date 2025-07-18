@@ -4,7 +4,8 @@ import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { expect } from 'vitest';
 
-// Estender o expect do Vitest para incluir o matcher toHaveNoViolations
+// Extend Vitest's expect to include toHaveNoViolations matcher
+// @ts-ignore - jest-axe types might not match vitest exactly
 expect.extend(toHaveNoViolations);
 
 /**
@@ -19,6 +20,7 @@ export async function testAccessibility(
 ) {
   const container = render(ui).container;
   const results = await axe(container, options);
+  // @ts-ignore - Type assertion for toHaveNoViolations
   expect(results).toHaveNoViolations();
   return results;
 }

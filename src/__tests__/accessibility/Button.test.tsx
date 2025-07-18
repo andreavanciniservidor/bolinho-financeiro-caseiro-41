@@ -1,5 +1,6 @@
+
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../utils/test-utils';
 import { Button } from '@/components/ui/button';
 import { testAccessibility, checkColorContrast } from '../utils/accessibility-utils';
 

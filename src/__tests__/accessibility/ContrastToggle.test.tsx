@@ -1,5 +1,6 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../utils/test-utils';
 import { ContrastToggle, FontSizeControl, checkApplicationContrast } from '@/components/accessibility/ContrastToggle';
 import { testAccessibility } from '../utils/accessibility-utils';
 import { hasEnoughContrast } from '@/utils/contrastChecker';

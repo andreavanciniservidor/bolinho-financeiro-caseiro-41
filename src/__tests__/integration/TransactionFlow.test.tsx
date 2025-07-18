@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../utils/test-utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Since we don't have access to the actual components, let's create simple mocks
@@ -65,7 +65,7 @@ describe.skip('Transaction Flow Integration', () => {
       defaultOptions: {
         queries: {
           retry: false,
-          gcTime: 0, // Fixed: replaced cacheTime with gcTime
+          gcTime: 0,
         },
       },
     });
