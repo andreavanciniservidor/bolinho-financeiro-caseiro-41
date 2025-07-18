@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -10,7 +11,6 @@ class CategoryService {
     let query = supabase
       .from('categories')
       .select('*')
-      .eq('is_active', true)
       .order('name');
 
     if (type) {
@@ -130,20 +130,20 @@ class CategoryService {
   async getDefaultCategories(): Promise<CategoryInsert[]> {
     return [
       // Expense categories
-      { name: 'Alimentação', type: 'expense', color: '#ef4444', icon: '🍽️' },
-      { name: 'Transporte', type: 'expense', color: '#f97316', icon: '🚗' },
-      { name: 'Moradia', type: 'expense', color: '#eab308', icon: '🏠' },
-      { name: 'Saúde', type: 'expense', color: '#84cc16', icon: '🏥' },
-      { name: 'Educação', type: 'expense', color: '#06b6d4', icon: '📚' },
-      { name: 'Lazer', type: 'expense', color: '#8b5cf6', icon: '🎮' },
-      { name: 'Roupas', type: 'expense', color: '#ec4899', icon: '👕' },
-      { name: 'Outros', type: 'expense', color: '#64748b', icon: '📦' },
+      { name: 'Alimentação', type: 'expense', color: '#ef4444' },
+      { name: 'Transporte', type: 'expense', color: '#f97316' },
+      { name: 'Moradia', type: 'expense', color: '#eab308' },
+      { name: 'Saúde', type: 'expense', color: '#84cc16' },
+      { name: 'Educação', type: 'expense', color: '#06b6d4' },
+      { name: 'Lazer', type: 'expense', color: '#8b5cf6' },
+      { name: 'Roupas', type: 'expense', color: '#ec4899' },
+      { name: 'Outros', type: 'expense', color: '#64748b' },
       
       // Income categories
-      { name: 'Salário', type: 'income', color: '#22c55e', icon: '💼' },
-      { name: 'Freelance', type: 'income', color: '#10b981', icon: '💻' },
-      { name: 'Investimentos', type: 'income', color: '#059669', icon: '📈' },
-      { name: 'Outros', type: 'income', color: '#047857', icon: '💰' }
+      { name: 'Salário', type: 'income', color: '#22c55e' },
+      { name: 'Freelance', type: 'income', color: '#10b981' },
+      { name: 'Investimentos', type: 'income', color: '#059669' },
+      { name: 'Outros', type: 'income', color: '#047857' }
     ];
   }
 

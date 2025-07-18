@@ -1,13 +1,15 @@
+
 import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TransactionForm } from '../components/transactions/TransactionForm';
 import { TransactionFilters, TransactionFiltersData } from '../components/transactions/TransactionFilters';
 import { TransactionList } from '../components/transactions/TransactionList';
-import { useSupabaseTransactions, Transaction } from '@/hooks/useSupabaseTransactions';
+import { useSupabaseTransactions } from '@/hooks/useSupabaseTransactions';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import type { Transaction } from '@/types';
 
 export function Transactions() {
   const { transactions, isLoading, addTransaction, updateTransaction, deleteTransaction, duplicateTransaction } = useSupabaseTransactions();
@@ -33,7 +35,8 @@ export function Transactions() {
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
     transactions.forEach(transaction => {
-      transaction.tags?.forEach(tag => tagSet.add(tag));
+      const transactionTags = transaction.tags || [];
+      transactionTags.forEach(tag => tagSet.add(tag));
     });
     return Array.from(tagSet).sort();
   }, [transactions]);
@@ -196,6 +199,17 @@ export function Transactions() {
     }
   }, [filteredTransactions]);
 
+  const handleUpdate = useCallback(async (id: string, updates: Partial<Transaction>) => {
+    const result = await updateTransaction(id, updates);
+    if (result.error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+  }, [updateTransaction]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -293,9 +307,7 @@ export function Transactions() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
-        onUpdate={async (id: string, updates: Partial<Transaction>) => {
-          await updateTransaction(id, updates);
-        }}
+        onUpdate={handleUpdate}
         isLoading={isLoading}
       />
 

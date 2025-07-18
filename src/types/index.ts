@@ -22,6 +22,8 @@ export interface Transaction {
   organization_id?: string;
   created_at: string;
   updated_at: string;
+  parent_transaction_id?: string;
+  recurrence_rule?: any;
 }
 
 export interface Budget {
@@ -35,6 +37,7 @@ export interface Budget {
   is_active: boolean;
   period_start?: string;
   period_end?: string;
+  period_type?: string;
   user_id: string;
   organization_id?: string;
   created_at: string;
@@ -49,6 +52,8 @@ export interface Category {
   user_id?: string;
   organization_id?: string;
   created_at?: string;
+  is_active?: boolean;
+  icon?: string;
 }
 
 export interface Organization {
@@ -85,9 +90,11 @@ export interface UserPreferences {
   currency?: string;
   date_format?: string;
   number_format?: string;
-  notifications_enabled: boolean;
-  email_notifications: boolean;
-  push_notifications: boolean;
+  notifications?: {
+    email: boolean;
+    push: boolean;
+    budget_alerts: boolean;
+  };
   created_at: string;
   updated_at: string;
 }

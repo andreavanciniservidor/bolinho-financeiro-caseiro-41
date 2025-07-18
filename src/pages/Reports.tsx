@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -13,7 +14,7 @@ import { ReportFilters as ReportFiltersComponent } from '@/components/reports/Re
 import { ReportExport } from '@/components/reports/ReportExport';
 import { PageHeader, ContentSection, GridLayout, CardLayout, Stack } from '@/components/layout/Layout';
 
-interface ReportFilters {
+interface ReportsFilters {
   startDate: string;
   endDate: string;
   type: 'all' | 'income' | 'expense';
@@ -21,7 +22,7 @@ interface ReportFilters {
 }
 
 export function Reports() {
-  const [filters, setFilters] = useState<ReportFilters>({
+  const [filters, setFilters] = useState<ReportsFilters>({
     startDate: format(startOfMonth(subMonths(new Date(), 11)), 'yyyy-MM-dd'),
     endDate: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
     type: 'all' as const
@@ -112,6 +113,10 @@ export function Reports() {
         <CardLayout padding="md">
           <ReportFiltersComponent
             categories={formattedCategories}
+            onFilterChange={(newFilters) => {
+              // Handle filter changes if needed
+              console.log('Filter changed:', newFilters);
+            }}
           />
         </CardLayout>
       </ContentSection>
@@ -177,7 +182,7 @@ export function Reports() {
             <PieChart className="h-5 w-5 text-gray-500" />
           </div>
           <CategoryPieChart 
-            categories={categoryData}
+            data={categoryData}
             height={300}
           />
         </CardLayout>
@@ -234,10 +239,8 @@ export function Reports() {
                 category_id: t.category_id,
                 category_color: t.category?.color
               }))}
-              dateRange={{
-                start: filters.startDate,
-                end: filters.endDate
-              }}
+              startDate={filters.startDate}
+              endDate={filters.endDate}
             />
           </div>
         </CardLayout>

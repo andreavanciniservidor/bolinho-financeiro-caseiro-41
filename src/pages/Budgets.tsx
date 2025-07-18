@@ -1,10 +1,12 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { BudgetForm } from '../components/BudgetForm';
-import { useSupabaseBudgets, Budget } from '@/hooks/useSupabaseBudgets';
+import { useSupabaseBudgets } from '@/hooks/useSupabaseBudgets';
 import { cn } from '@/lib/utils';
+import type { Budget } from '@/types';
 
 export function Budgets() {
   const { budgets, isLoading, addBudget, updateBudget, deleteBudget } = useSupabaseBudgets();
@@ -29,11 +31,11 @@ export function Budgets() {
 
   const filteredBudgets = budgets.filter(budget =>
     budget.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    budget.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (budget.category && budget.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spentAmount, 0);
+  const totalPlanned = budgets.reduce((sum, b) => sum + b.planned_amount, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (b.spent_amount || 0), 0);
   const progressPercentage = totalPlanned > 0 ? (totalSpent / totalPlanned) * 100 : 0;
 
   if (isLoading) {
@@ -138,16 +140,16 @@ export function Budgets() {
           </div>
         ) : (
           filteredBudgets.map((budget) => {
-            const percentage = budget.plannedAmount > 0 ? (budget.spentAmount / budget.plannedAmount) * 100 : 0;
-            const isOverBudget = percentage > 100;
-            const isNearLimit = percentage >= budget.alertPercentage;
+            const percentage = budget.planned_amount > 0 ? ((budget.spent_amount || 0) / budget.planned_amount) * 100 : 0;
+            const isOverBudget = (budget.spent_amount || 0) > budget.planned_amount;
+            const isNearLimit = percentage >= budget.alert_percentage;
             
             return (
               <div key={budget.id} className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="font-semibold text-gray-900">{budget.name}</h3>
-                    <p className="text-sm text-gray-500">{budget.category}</p>
+                    <p className="text-sm text-gray-500">{budget.category || 'Sem categoria'}</p>
                   </div>
                   <div className="flex space-x-2">
                     <Button
@@ -174,11 +176,11 @@ export function Budgets() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Orçamento:</span>
-                    <span className="font-medium">R$ {budget.plannedAmount.toFixed(2)}</span>
+                    <span className="font-medium">R$ {budget.planned_amount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Gasto:</span>
-                    <span className="font-medium">R$ {budget.spentAmount.toFixed(2)}</span>
+                    <span className="font-medium">R$ {(budget.spent_amount || 0).toFixed(2)}</span>
                   </div>
                   
                   <div className="w-full bg-gray-200 rounded-full h-2">

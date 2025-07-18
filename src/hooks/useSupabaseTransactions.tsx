@@ -58,7 +58,7 @@ export function useSupabaseTransactions(options: PaginationOptions = {}) {
     refetch
   } = useQuery({
     queryKey: ['transactions', { page, limit, sortBy, sortOrder, filters }],
-    queryFn: () => transactionService.getTransactions({ page, limit, sortBy, sortOrder, filters }),
+    queryFn: () => transactionService.getTransactions(filters, { page, limit }),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
