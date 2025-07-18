@@ -133,7 +133,10 @@ export function Categories() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setEditingCategory(category);
+                          setEditingCategory({
+                            ...category,
+                            type: category.type as 'income' | 'expense'
+                          });
                           setShowForm(true);
                         }}
                       >
@@ -187,7 +190,10 @@ export function Categories() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setEditingCategory(category);
+                          setEditingCategory({
+                            ...category,
+                            type: category.type as 'income' | 'expense'
+                          });
                           setShowForm(true);
                         }}
                       >

@@ -32,17 +32,23 @@ export function Dashboard() {
       };
     }
 
-    const income = transactions
+    // Cast transactions to proper types
+    const typedTransactions = transactions.map(t => ({
+      ...t,
+      type: t.type as 'income' | 'expense'
+    }));
+
+    const income = typedTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
       
-    const expenses = transactions
+    const expenses = typedTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     // Group transactions by month for chart
     const monthlyMap = new Map();
-    transactions.forEach(t => {
+    typedTransactions.forEach(t => {
       const month = new Date(t.date).getMonth();
       const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const monthName = monthNames[month];
@@ -63,14 +69,15 @@ export function Dashboard() {
     const categoryMap = new Map();
     const categoryColors = new Map(categories.map(c => [c.name, c.color]));
     
-    transactions
+    typedTransactions
       .filter(t => t.type === 'expense')
       .forEach(t => {
+        const categoryName = t.category?.name || 'Sem categoria';
         const amount = Math.abs(t.amount);
-        if (categoryMap.has(t.category)) {
-          categoryMap.set(t.category, categoryMap.get(t.category) + amount);
+        if (categoryMap.has(categoryName)) {
+          categoryMap.set(categoryName, categoryMap.get(categoryName) + amount);
         } else {
-          categoryMap.set(t.category, amount);
+          categoryMap.set(categoryName, amount);
         }
       });
 
@@ -91,8 +98,8 @@ export function Dashboard() {
 
   const budgetControlPercentage = useMemo(() => {
     if (!budgets || budgets.length === 0) return 0;
-    const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
-    const totalSpent = budgets.reduce((sum, b) => sum + b.spentAmount, 0);
+    const totalPlanned = budgets.reduce((sum, b) => sum + (b.planned_amount || 0), 0);
+    const totalSpent = budgets.reduce((sum, b) => sum + (b.spent_amount || 0), 0);
     return totalPlanned > 0 ? (totalSpent / totalPlanned) * 100 : 0;
   }, [budgets]);
 
@@ -117,6 +124,12 @@ export function Dashboard() {
       </div>
     );
   }
+
+  // Cast transactions and budgets to expected types
+  const typedTransactions = transactions.map(t => ({
+    ...t,
+    type: t.type as 'income' | 'expense'
+  }));
 
   return (
     <Stack space="lg">
@@ -162,7 +175,7 @@ export function Dashboard() {
       {/* Interactive Charts Section */}
       <ContentSection>
         <InteractiveCharts 
-          transactions={transactions}
+          transactions={typedTransactions}
           className="w-full"
         />
       </ContentSection>
@@ -197,7 +210,7 @@ export function Dashboard() {
             </button>
           </div>
           <RecentTransactions 
-            transactions={transactions}
+            transactions={typedTransactions}
             loading={transactionsLoading}
             limit={5}
             onViewAll={() => navigate('/transactions')}

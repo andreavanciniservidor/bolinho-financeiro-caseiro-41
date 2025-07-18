@@ -1,77 +1,129 @@
 
 import { useState, useEffect } from 'react';
-import { Transaction } from '@/types';
 
-// Mock data para transações
-const mockTransactions: Transaction[] = [
+// Mock data with proper category objects
+const mockTransactions = [
   {
     id: '1',
-    description: 'Salário',
-    amount: 5000,
-    date: '2024-07-01',
-    type: 'income',
-    category: 'Trabalho',
-    paymentMethod: 'PIX'
+    description: 'Supermercado',
+    amount: -150.00,
+    date: '2024-01-15',
+    type: 'expense' as const,
+    category: {
+      id: '1',
+      name: 'Alimentação',
+      color: '#ef4444',
+      type: 'expense' as const
+    },
+    payment_method: 'Cartão de Crédito',
+    user_id: '1',
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z'
   },
   {
     id: '2',
-    description: 'Supermercado',
-    amount: 250,
-    date: '2024-07-02',
-    type: 'expense',
-    category: 'Alimentação',
-    paymentMethod: 'Cartão de Débito'
+    description: 'Salário',
+    amount: 5000.00,
+    date: '2024-01-01',
+    type: 'income' as const,
+    category: {
+      id: '2',
+      name: 'Salário',
+      color: '#10b981',
+      type: 'income' as const
+    },
+    payment_method: 'Transferência',
+    user_id: '1',
+    created_at: '2024-01-01T09:00:00Z',
+    updated_at: '2024-01-01T09:00:00Z'
   },
   {
     id: '3',
     description: 'Conta de Luz',
-    amount: 120,
-    date: '2024-07-03',
-    type: 'expense',
-    category: 'Casa',
-    paymentMethod: 'Débito Automático'
+    amount: -120.00,
+    date: '2024-01-10',
+    type: 'expense' as const,
+    category: {
+      id: '3',
+      name: 'Utilities',
+      color: '#f59e0b',
+      type: 'expense' as const
+    },
+    payment_method: 'Débito Automático',
+    user_id: '1',
+    created_at: '2024-01-10T14:00:00Z',
+    updated_at: '2024-01-10T14:00:00Z'
   }
 ];
 
-export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export interface UseTransactionsResult {
+  transactions: typeof mockTransactions;
+  isLoading: boolean;
+  error: string | null;
+  addTransaction: (transaction: any) => Promise<void>;
+  updateTransaction: (id: string, updates: any) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  refetch: () => void;
+}
 
-  useEffect(() => {
-    // Simula carregamento dos dados
-    setTimeout(() => {
-      setTransactions(mockTransactions);
+export function useTransactions(): UseTransactionsResult {
+  const [transactions, setTransactions] = useState(mockTransactions);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addTransaction = async (transaction: any) => {
+    setIsLoading(true);
+    try {
+      const newTransaction = {
+        ...transaction,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setTransactions(prev => [newTransaction, ...prev]);
+    } catch (err) {
+      setError('Failed to add transaction');
+    } finally {
       setIsLoading(false);
-    }, 500);
-  }, []);
-
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: Date.now().toString(),
-    };
-    
-    setTransactions(prev => [...prev, newTransaction]);
-    return { data: newTransaction, error: null };
+    }
   };
 
-  const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
-    setTransactions(prev => 
-      prev.map(t => t.id === id ? { ...t, ...transaction } : t)
-    );
-    return { data: null, error: null };
+  const updateTransaction = async (id: string, updates: any) => {
+    setIsLoading(true);
+    try {
+      setTransactions(prev =>
+        prev.map(t => t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t)
+      );
+    } catch (err) {
+      setError('Failed to update transaction');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const deleteTransaction = async (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-    return { error: null };
+    setIsLoading(true);
+    try {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      setError('Failed to delete transaction');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refetch = () => {
+    // Mock refetch - in real app this would refetch from API
+    setTransactions(mockTransactions);
   };
 
   return {
     transactions,
     isLoading,
+    error,
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    refetch
   };
 }

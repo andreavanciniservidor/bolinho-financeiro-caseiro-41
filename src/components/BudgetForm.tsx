@@ -14,7 +14,7 @@ import { Budget } from '../types';
 interface BudgetFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (budget: Omit<Budget, 'id' | 'spentAmount'>) => void;
+  onSubmit: (budget: Omit<Budget, 'id' | 'spent_amount'>) => void;
   budget?: Budget;
 }
 
@@ -22,9 +22,9 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
   const [formData, setFormData] = useState({
     name: budget?.name || '',
     category: budget?.category || '',
-    plannedAmount: budget?.plannedAmount?.toString() || '',
-    alertPercentage: budget?.alertPercentage || 80,
-    isActive: budget?.isActive ?? true
+    planned_amount: budget?.planned_amount?.toString() || '',
+    alert_percentage: budget?.alert_percentage || 80,
+    is_active: budget?.is_active ?? true
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,9 +33,12 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
     onSubmit({
       name: formData.name,
       category: formData.category,
-      plannedAmount: parseFloat(formData.plannedAmount),
-      alertPercentage: formData.alertPercentage,
-      isActive: formData.isActive
+      planned_amount: parseFloat(formData.planned_amount),
+      alert_percentage: formData.alert_percentage,
+      is_active: formData.is_active,
+      user_id: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
     
     onClose();
@@ -90,8 +93,8 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
               type="number"
               step="0.01"
               placeholder="0,00"
-              value={formData.plannedAmount}
-              onChange={(e) => setFormData({ ...formData, plannedAmount: e.target.value })}
+              value={formData.planned_amount}
+              onChange={(e) => setFormData({ ...formData, planned_amount: e.target.value })}
               required
             />
           </div>
@@ -106,8 +109,8 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
               <Label className="text-sm">Alerta quando atingir:</Label>
               <div className="mt-3 mb-2">
                 <Slider
-                  value={[formData.alertPercentage]}
-                  onValueChange={(value) => setFormData({ ...formData, alertPercentage: value[0] })}
+                  value={[formData.alert_percentage]}
+                  onValueChange={(value) => setFormData({ ...formData, alert_percentage: value[0] })}
                   max={100}
                   min={10}
                   step={5}
@@ -116,7 +119,7 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
               </div>
               <div className="flex justify-between text-sm text-gray-500">
                 <span>10%</span>
-                <span className="font-medium text-blue-600">{formData.alertPercentage}%</span>
+                <span className="font-medium text-blue-600">{formData.alert_percentage}%</span>
                 <span>100%</span>
               </div>
             </div>
@@ -130,8 +133,8 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
             <Label htmlFor="active" className="text-base">Orçamento Ativo</Label>
             <Switch
               id="active"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
             />
           </div>
 

@@ -1,10 +1,12 @@
 
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme-provider';
+
+// Import testing utilities directly
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 
 // Criar um cliente de consulta para testes
 const createTestQueryClient = () => new QueryClient({
