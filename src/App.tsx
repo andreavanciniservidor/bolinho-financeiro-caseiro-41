@@ -14,6 +14,7 @@ import { setupFocusIndicators } from '@/utils/focusManagement';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { ErrorPage } from '@/components/common/ErrorPage';
 import { LoadingFallback } from '@/components/common/LoadingFallback';
+import { AuthDebug } from '@/components/common/AuthDebug';
 import { logError } from '@/utils/errorUtils';
 import { initMonitoring, setUser, clearUser } from '@/services/monitoringService';
 import { initAnalytics } from '@/services/analyticsService';
@@ -70,7 +71,20 @@ function AppContent() {
   }, [user]);
 
   if (loading) {
-    return <LoadingFallback message="Carregando a aplicação..." size="lg" fullScreen={true} />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <LoadingFallback message="Carregando a aplicação..." size="lg" fullScreen={false} />
+        {/* Componente de depuração para ajudar a identificar problemas de autenticação */}
+        {import.meta.env.DEV && (
+          <div className="mt-8">
+            <p className="text-center mb-4 text-gray-600">
+              Se o carregamento demorar muito, use as opções abaixo para diagnosticar:
+            </p>
+            <AuthDebug />
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (!user) {
