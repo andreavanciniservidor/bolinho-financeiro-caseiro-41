@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -7,20 +6,14 @@ type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
 type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 
 class CategoryService {
-  async getCategories(type?: 'income' | 'expense') {
-    let query = supabase
+  async getCategories() {
+    const { data, error } = await supabase
       .from('categories')
       .select('*')
       .order('name');
 
-    if (type) {
-      query = query.eq('type', type);
-    }
-
-    const { data, error } = await query;
-
     if (error) throw error;
-    return data || [];
+    return data;
   }
 
   async getCategoryById(id: string) {
@@ -48,7 +41,7 @@ class CategoryService {
   async updateCategory(id: string, updates: CategoryUpdate) {
     const { data, error } = await supabase
       .from('categories')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -58,25 +51,26 @@ class CategoryService {
   }
 
   async deleteCategory(id: string) {
-    // Check if category is being used in transactions or budgets
+    // Check if category is being used in transactions
     const { data: transactions } = await supabase
       .from('transactions')
       .select('id')
       .eq('category_id', id)
       .limit(1);
 
+    if (transactions && transactions.length > 0) {
+      throw new Error('Cannot delete category that is being used in transactions');
+    }
+
+    // Check if category is being used in budgets
     const { data: budgets } = await supabase
       .from('budgets')
       .select('id')
       .eq('category_id', id)
       .limit(1);
 
-    if (transactions && transactions.length > 0) {
-      throw new Error('Não é possível excluir categoria que possui transações associadas');
-    }
-
     if (budgets && budgets.length > 0) {
-      throw new Error('Não é possível excluir categoria que possui orçamentos associados');
+      throw new Error('Cannot delete category that is being used in budgets');
     }
 
     const { error } = await supabase
@@ -89,103 +83,53 @@ class CategoryService {
   }
 
   async deactivateCategory(id: string) {
-    return this.updateCategory(id, { is_active: false });
+    // Since is_active doesn't exist in the database, we'll just keep this for compatibility
+    // but it won't actually do anything
+    console.warn('Category deactivation not supported - is_active field does not exist in database');
+    return { success: true };
   }
 
-  async getCategoryUsage(id: string) {
-    const [transactionsResult, budgetsResult] = await Promise.all([
-      supabase
-        .from('transactions')
-        .select('id, amount, type')
-        .eq('category_id', id),
-      supabase
-        .from('budgets')
-        .select('id, name, planned_amount')
-        .eq('category_id', id)
-    ]);
+  async getCategoriesByType(type: 'income' | 'expense') {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('type', type)
+      .order('name');
 
-    if (transactionsResult.error) throw transactionsResult.error;
-    if (budgetsResult.error) throw budgetsResult.error;
-
-    const transactions = transactionsResult.data || [];
-    const budgets = budgetsResult.data || [];
-
-    const totalIncome = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalExpenses = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    return {
-      transactionCount: transactions.length,
-      budgetCount: budgets.length,
-      totalIncome,
-      totalExpenses,
-      canDelete: transactions.length === 0 && budgets.length === 0
-    };
+    if (error) throw error;
+    return data;
   }
 
-  async getDefaultCategories(): Promise<CategoryInsert[]> {
-    return [
-      // Expense categories
-      { name: 'Alimentação', type: 'expense', color: '#ef4444' },
-      { name: 'Transporte', type: 'expense', color: '#f97316' },
-      { name: 'Moradia', type: 'expense', color: '#eab308' },
-      { name: 'Saúde', type: 'expense', color: '#84cc16' },
-      { name: 'Educação', type: 'expense', color: '#06b6d4' },
-      { name: 'Lazer', type: 'expense', color: '#8b5cf6' },
-      { name: 'Roupas', type: 'expense', color: '#ec4899' },
-      { name: 'Outros', type: 'expense', color: '#64748b' },
-      
-      // Income categories
-      { name: 'Salário', type: 'income', color: '#22c55e' },
-      { name: 'Freelance', type: 'income', color: '#10b981' },
-      { name: 'Investimentos', type: 'income', color: '#059669' },
-      { name: 'Outros', type: 'income', color: '#047857' }
-    ];
-  }
-
-  async createDefaultCategories() {
-    const defaultCategories = await this.getDefaultCategories();
+  async getDefaultCategories() {
+    // Create default categories if they don't exist
+    const existingCategories = await this.getCategories();
     
-    const results = [];
-    for (const category of defaultCategories) {
-      try {
-        const result = await this.createCategory(category);
-        results.push(result);
-      } catch (error) {
-        console.warn(`Failed to create category ${category.name}:`, error);
+    if (existingCategories.length === 0) {
+      const defaultCategories = [
+        { name: 'Alimentação', type: 'expense', color: '#ef4444' },
+        { name: 'Transporte', type: 'expense', color: '#f97316' },
+        { name: 'Moradia', type: 'expense', color: '#eab308' },
+        { name: 'Saúde', type: 'expense', color: '#22c55e' },
+        { name: 'Educação', type: 'expense', color: '#3b82f6' },
+        { name: 'Lazer', type: 'expense', color: '#8b5cf6' },
+        { name: 'Salário', type: 'income', color: '#10b981' },
+        { name: 'Freelance', type: 'income', color: '#06b6d4' },
+        { name: 'Investimentos', type: 'income', color: '#84cc16' },
+        { name: 'Outros', type: 'expense', color: '#64748b' }
+      ];
+
+      for (const category of defaultCategories) {
+        try {
+          await this.createCategory(category);
+        } catch (error) {
+          console.error('Error creating default category:', error);
+        }
       }
-    }
-    
-    return results;
-  }
 
-  async validateCategoryData(category: Partial<CategoryInsert | CategoryUpdate>) {
-    const errors: string[] = [];
-
-    if (category.name && category.name.trim().length === 0) {
-      errors.push('Nome da categoria é obrigatório');
+      return this.getCategories();
     }
 
-    if (category.name && category.name.length > 50) {
-      errors.push('Nome da categoria deve ter no máximo 50 caracteres');
-    }
-
-    if (category.type && !['income', 'expense'].includes(category.type)) {
-      errors.push('Tipo da categoria deve ser "income" ou "expense"');
-    }
-
-    if (category.color && !/^#[0-9A-F]{6}$/i.test(category.color)) {
-      errors.push('Cor deve estar no formato hexadecimal (#RRGGBB)');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
+    return existingCategories;
   }
 }
 

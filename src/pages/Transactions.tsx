@@ -31,7 +31,7 @@ export function Transactions() {
     amountMax: undefined,
   });
 
-  // Get available tags from transactions
+  // Get available tags from transactions (using empty array since tags don't exist in DB)
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
     transactions.forEach(transaction => {
@@ -95,7 +95,7 @@ export function Transactions() {
         return false;
       }
 
-      // Tags filter
+      // Tags filter (using empty array since tags don't exist in DB)
       if (filters.tags.length > 0) {
         const transactionTags = transaction.tags || [];
         const hasMatchingTag = filters.tags.some(tag => transactionTags.includes(tag));
@@ -302,7 +302,11 @@ export function Transactions() {
       <TransactionList
         transactions={filteredTransactions.map(t => ({
           ...t,
-          type: t.type as 'income' | 'expense'
+          type: t.type as 'income' | 'expense',
+          category: t.category ? {
+            ...t.category,
+            type: t.category.type as 'income' | 'expense'
+          } : undefined
         }))}
         onEdit={handleEdit}
         onDelete={handleDelete}

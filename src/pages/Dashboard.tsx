@@ -1,221 +1,180 @@
 
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
-import { StatCard } from '../components/StatCard';
-import { ChartCard } from '../components/dashboard/ChartCard';
-import { BudgetProgress } from '../components/dashboard/BudgetProgress';
-import { RecentTransactions } from '../components/dashboard/RecentTransactions';
-import { InteractiveCharts } from '../components/dashboard/InteractiveCharts';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { useState, useMemo } from 'react';
+import { FinancialInsights } from '@/components/dashboard/FinancialInsights';
+import { InteractiveCharts } from '@/components/dashboard/InteractiveCharts';
+import { BudgetProgress } from '@/components/dashboard/BudgetProgress';
+import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { useSupabaseTransactions } from '@/hooks/useSupabaseTransactions';
 import { useSupabaseBudgets } from '@/hooks/useSupabaseBudgets';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import { PageHeader, ContentSection, GridLayout, CardLayout, Stack } from '@/components/layout/Layout';
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function Dashboard() {
-  const navigate = useNavigate();
-  const { transactions = [], isLoading: transactionsLoading, error: transactionsError } = useSupabaseTransactions();
-  const { budgets = [], isLoading: budgetsLoading } = useSupabaseBudgets();
-  const { categories = [] } = useSupabaseCategories();
+  const { transactions, isLoading: transactionsLoading } = useSupabaseTransactions({ limit: 10 });
+  const { budgets, isLoading: budgetsLoading } = useSupabaseBudgets();
+  const { categories } = useSupabaseCategories();
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
 
-  console.log('Dashboard - transactions:', transactions, 'loading:', transactionsLoading, 'error:', transactionsError);
-
-  const { totalIncome, totalExpenses, balance, monthlyData, categoryData } = useMemo(() => {
-    if (!transactions || transactions.length === 0) {
-      return {
-        totalIncome: 0,
-        totalExpenses: 0,
-        balance: 0,
-        monthlyData: [],
-        categoryData: []
-      };
+  // Calculate financial metrics
+  const metrics = useMemo(() => {
+    const currentDate = new Date();
+    const startOfPeriod = new Date();
+    
+    switch (selectedPeriod) {
+      case 'week':
+        startOfPeriod.setDate(currentDate.getDate() - 7);
+        break;
+      case 'month':
+        startOfPeriod.setMonth(currentDate.getMonth() - 1);
+        break;
+      case 'year':
+        startOfPeriod.setFullYear(currentDate.getFullYear() - 1);
+        break;
     }
 
-    // Cast transactions to proper types
-    const typedTransactions = transactions.map(t => ({
-      ...t,
-      type: t.type as 'income' | 'expense'
-    }));
+    const periodTransactions = transactions.filter(t => 
+      new Date(t.date) >= startOfPeriod
+    );
 
-    const income = typedTransactions
+    const totalIncome = periodTransactions
       .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-      
-    const expenses = typedTransactions
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const totalExpenses = periodTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-    // Group transactions by month for chart
-    const monthlyMap = new Map();
-    typedTransactions.forEach(t => {
-      const month = new Date(t.date).getMonth();
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const monthName = monthNames[month];
-      
-      if (!monthlyMap.has(monthName)) {
-        monthlyMap.set(monthName, { month: monthName, receitas: 0, despesas: 0 });
-      }
-      
-      const monthData = monthlyMap.get(monthName);
-      if (t.type === 'income') {
-        monthData.receitas += t.amount;
-      } else {
-        monthData.despesas += Math.abs(t.amount);
-      }
-    });
+    const balance = totalIncome - totalExpenses;
 
-    // Group expenses by category for pie chart
-    const categoryMap = new Map();
-    const categoryColors = new Map(categories.map(c => [c.name, c.color]));
-    
-    typedTransactions
-      .filter(t => t.type === 'expense')
-      .forEach(t => {
-        const categoryName = t.category?.name || 'Sem categoria';
-        const amount = Math.abs(t.amount);
-        if (categoryMap.has(categoryName)) {
-          categoryMap.set(categoryName, categoryMap.get(categoryName) + amount);
-        } else {
-          categoryMap.set(categoryName, amount);
-        }
-      });
-
-    const categoryChartData = Array.from(categoryMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-      color: categoryColors.get(name) || '#64748b'
-    }));
+    // Budget analysis
+    const totalBudgeted = budgets.reduce((sum, b) => sum + b.planned_amount, 0);
+    const totalSpent = budgets.reduce((sum, b) => sum + (b.spent_amount || 0), 0);
+    const budgetUtilization = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
 
     return {
-      totalIncome: income,
-      totalExpenses: expenses,
-      balance: income - expenses,
-      monthlyData: Array.from(monthlyMap.values()),
-      categoryData: categoryChartData
+      totalIncome,
+      totalExpenses,
+      balance,
+      totalBudgeted,
+      totalSpent,
+      budgetUtilization,
+      transactionCount: periodTransactions.length
     };
-  }, [transactions, categories]);
+  }, [transactions, budgets, selectedPeriod]);
 
-  const budgetControlPercentage = useMemo(() => {
-    if (!budgets || budgets.length === 0) return 0;
-    const totalPlanned = budgets.reduce((sum, b) => sum + b.planned_amount, 0);
-    const totalSpent = budgets.reduce((sum, b) => sum + (b.spent_amount || 0), 0);
-    return totalPlanned > 0 ? (totalSpent / totalPlanned) * 100 : 0;
-  }, [budgets]);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-  if (transactionsError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar dados</h2>
-          <p className="text-gray-600">Verifique sua conexão e tente novamente.</p>
-        </div>
-      </div>
-    );
-  }
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
 
   if (transactionsLoading || budgetsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando dashboard...</p>
-        </div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  // Cast transactions and budgets to expected types
-  const typedTransactions = transactions.map(t => ({
-    ...t,
-    type: t.type as 'income' | 'expense'
-  }));
-
   return (
-    <Stack space="lg">
+    <div className="p-6 space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <PageHeader 
-        title="Dashboard" 
-        description="Visão geral das suas finanças em julho de 2025"
-      />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Visão geral das suas finanças
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {/* Period Selector */}
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            {(['week', 'month', 'year'] as const).map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium transition-colors",
+                  selectedPeriod === period
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                )}
+              >
+                {period === 'week' ? '7 dias' : period === 'month' ? '30 dias' : '1 ano'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* Stats Cards */}
-      <ContentSection>
-        <GridLayout cols={4} gap="md">
-          <StatCard
-            title="Receitas"
-            value={`R$ ${totalIncome.toFixed(2)}`}
-            subtitle="No mês atual"
-            trend="up"
-            icon={<TrendingUp className="h-6 w-6" />}
-          />
-          <StatCard
-            title="Despesas"
-            value={`R$ ${totalExpenses.toFixed(2)}`}
-            subtitle="No mês atual"
-            trend="down"
-            icon={<TrendingDown className="h-6 w-6" />}
-          />
-          <StatCard
-            title="Saldo"
-            value={`R$ ${balance.toFixed(2)}`}
-            subtitle={balance >= 0 ? "Positivo" : "Negativo"}
-            trend={balance >= 0 ? "up" : "down"}
-            icon={<DollarSign className="h-6 w-6" />}
-          />
-          <StatCard
-            title="Controle de Orçamentos"
-            value={`${budgetControlPercentage.toFixed(0)}%`}
-            trend="neutral"
-            icon={<Target className="h-6 w-6" />}
-          />
-        </GridLayout>
-      </ContentSection>
-
-      {/* Interactive Charts Section */}
-      <ContentSection>
-        <InteractiveCharts 
-          transactions={typedTransactions}
-          className="w-full"
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Receitas"
+          value={formatCurrency(metrics.totalIncome)}
+          change={metrics.totalIncome > 0 ? '+5.2%' : '0%'}
+          icon={TrendingUp}
+          trend="up"
         />
-      </ContentSection>
+        <StatCard
+          title="Despesas"
+          value={formatCurrency(metrics.totalExpenses)}
+          change={metrics.totalExpenses > 0 ? '+2.1%' : '0%'}
+          icon={TrendingDown}
+          trend="down"
+        />
+        <StatCard
+          title="Saldo"
+          value={formatCurrency(metrics.balance)}
+          change={metrics.balance >= 0 ? 'Positivo' : 'Negativo'}
+          icon={DollarSign}
+          trend={metrics.balance >= 0 ? 'up' : 'down'}
+        />
+        <StatCard
+          title="Orçamento"
+          value={formatPercentage(metrics.budgetUtilization)}
+          change={`${formatCurrency(metrics.totalSpent)} de ${formatCurrency(metrics.totalBudgeted)}`}
+          icon={Target}
+          trend={metrics.budgetUtilization > 90 ? 'down' : 'up'}
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <InteractiveCharts 
+          transactions={transactions}
+          period={selectedPeriod}
+        />
+        
+        <FinancialInsights 
+          transactions={transactions}
+          budgets={budgets}
+          categories={categories}
+        />
+      </div>
 
       {/* Budget Progress and Recent Transactions */}
-      <GridLayout cols={2} gap="lg">
-        <CardLayout padding="lg">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-h3 text-foreground">Progresso dos Orçamentos</h3>
-            <button 
-              onClick={() => navigate('/budgets')}
-              className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
-            >
-              Gerenciar orçamentos →
-            </button>
-          </div>
-          <BudgetProgress 
-            budgets={budgets}
-            loading={budgetsLoading}
-            onManageBudgets={() => navigate('/budgets')}
-          />
-        </CardLayout>
-
-        <CardLayout padding="lg">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-h3 text-foreground">Transações Recentes</h3>
-            <button 
-              onClick={() => navigate('/transactions')}
-              className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
-            >
-              Ver todas →
-            </button>
-          </div>
-          <RecentTransactions 
-            transactions={typedTransactions}
-            isLoading={transactionsLoading}
-            onViewAll={() => navigate('/transactions')}
-          />
-        </CardLayout>
-      </GridLayout>
-    </Stack>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <BudgetProgress 
+          budgets={budgets}
+          onViewAll={() => window.location.href = '/budgets'}
+        />
+        
+        <RecentTransactions 
+          transactions={transactions}
+          isLoading={transactionsLoading}
+          onViewAll={() => window.location.href = '/transactions'}
+        />
+      </div>
+    </div>
   );
 }

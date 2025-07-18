@@ -63,11 +63,11 @@ export function useSupabaseTransactions(options: PaginationOptions = {}) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Add missing properties to transactions
+  // Add missing properties to transactions based on what's available in the database
   const transactions = (transactionData?.data || []).map(t => ({
     ...t,
-    installment_number: t.installment_number || 1,
-    tags: t.tags || [],
+    installment_number: 1, // Default value since this field doesn't exist in DB
+    tags: [], // Default empty array since this field doesn't exist in DB
     type: t.type as 'income' | 'expense'
   }));
   
