@@ -52,6 +52,6 @@ const customRender = (
   });
 };
 
-// Re-exportar tudo
+// Re-exportar tudo do @testing-library/react e nossos utilitários customizados
 export * from '@testing-library/react';
 export { customRender as render, screen, fireEvent, waitFor };

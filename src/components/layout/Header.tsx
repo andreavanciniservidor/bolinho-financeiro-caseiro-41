@@ -8,17 +8,22 @@ import { ContrastToggle, FontSizeControl } from '@/components/accessibility/Cont
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { cn } from '@/lib/utils'
 
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 interface HeaderProps {
   onMenuClick?: () => void
   showMenuButton?: boolean
   children?: ReactNode
   className?: string
   title?: string
-  breadcrumbs?: Array<{ label: string; href?: string }>
+  breadcrumbs?: BreadcrumbItem[]
 }
 
 // Mapeamento de rotas para títulos e breadcrumbs
-const routeConfig = {
+const routeConfig: Record<string, { title: string; breadcrumbs: BreadcrumbItem[] }> = {
   '/': { title: 'Dashboard', breadcrumbs: [{ label: 'Dashboard' }] },
   '/transactions': { title: 'Transações', breadcrumbs: [{ label: 'Dashboard', href: '/' }, { label: 'Transações' }] },
   '/categories': { title: 'Categorias', breadcrumbs: [{ label: 'Dashboard', href: '/' }, { label: 'Categorias' }] },
@@ -35,7 +40,7 @@ export function Header({
   breadcrumbs
 }: HeaderProps) {
   const location = useLocation()
-  const currentRoute = routeConfig[location.pathname as keyof typeof routeConfig]
+  const currentRoute = routeConfig[location.pathname]
   
   const displayTitle = title || currentRoute?.title || 'Finanças+'
   const displayBreadcrumbs = breadcrumbs || currentRoute?.breadcrumbs || []

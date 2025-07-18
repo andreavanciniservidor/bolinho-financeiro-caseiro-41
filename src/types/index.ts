@@ -5,21 +5,40 @@ export interface Transaction {
   amount: number;
   date: string;
   type: 'income' | 'expense';
-  category: string;
-  paymentMethod: string;
-  isRecurring?: boolean;
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+    type: 'income' | 'expense';
+  };
+  category_id?: string;
+  payment_method: string;
   installments?: number;
+  installment_number?: number;
+  is_recurring?: boolean;
   observations?: string;
+  tags?: string[];
+  user_id: string;
+  organization_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Budget {
   id: string;
   name: string;
-  category: string;
-  plannedAmount: number;
-  spentAmount: number;
-  alertPercentage: number;
-  isActive: boolean;
+  category_id?: string;
+  category?: string;
+  planned_amount: number;
+  spent_amount: number;
+  alert_percentage: number;
+  is_active: boolean;
+  period_start?: string;
+  period_end?: string;
+  user_id: string;
+  organization_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Category {
@@ -27,6 +46,9 @@ export interface Category {
   name: string;
   type: 'income' | 'expense';
   color: string;
+  user_id?: string;
+  organization_id?: string;
+  created_at?: string;
 }
 
 export interface Organization {
@@ -51,6 +73,21 @@ export interface Profile {
   last_name?: string;
   email?: string;
   current_organization_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserPreferences {
+  id: string;
+  user_id: string;
+  theme?: string;
+  language?: string;
+  currency?: string;
+  date_format?: string;
+  number_format?: string;
+  notifications_enabled: boolean;
+  email_notifications: boolean;
+  push_notifications: boolean;
   created_at: string;
   updated_at: string;
 }

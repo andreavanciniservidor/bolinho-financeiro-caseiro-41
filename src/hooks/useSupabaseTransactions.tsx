@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { transactionService, TransactionFilters, PaginationOptions } from '@/services/transactionService';
+import { transactionService } from '@/services/transactionService';
 import { useAuth } from './useAuth';
 
 export interface Transaction {
@@ -9,17 +10,40 @@ export interface Transaction {
   amount: number;
   date: string;
   type: 'income' | 'expense';
-  category?: string;
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+    type: 'income' | 'expense';
+  };
+  category_id?: string;
   payment_method: string;
-  is_recurring?: boolean;
   installments?: number;
+  installment_number?: number;
+  is_recurring?: boolean;
   observations?: string;
   tags?: string[];
-  category_id?: string;
   user_id: string;
   organization_id?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface TransactionFilters {
+  type?: 'income' | 'expense';
+  category_id?: string;
+  payment_method?: string;
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: TransactionFilters;
 }
 
 export function useSupabaseTransactions(options: PaginationOptions = {}) {
