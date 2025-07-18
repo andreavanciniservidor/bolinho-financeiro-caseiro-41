@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { transactionService, TransactionFilters, PaginationOptions } from '@/services/transactionService';
 import { useAuth } from './useAuth';
-import { useOrganization } from './useOrganization';
 
 export interface Transaction {
   id: string;
@@ -10,172 +10,125 @@ export interface Transaction {
   amount: number;
   date: string;
   type: 'income' | 'expense';
-  category: string;
-  paymentMethod: string;
-  isRecurring?: boolean;
+  category?: string;
+  payment_method: string;
+  is_recurring?: boolean;
   installments?: number;
   observations?: string;
+  tags?: string[];
+  category_id?: string;
+  user_id: string;
+  organization_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export function useSupabaseTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useSupabaseTransactions(
+  filters?: TransactionFilters,
+  pagination?: PaginationOptions
+) {
   const { user } = useAuth();
-  const { currentOrganization } = useOrganization();
+  const queryClient = useQueryClient();
 
-  const fetchTransactions = async () => {
-    if (!user || !currentOrganization) {
-      setTransactions([]);
-      setIsLoading(false);
-      return;
-    }
+  const queryKey = ['transactions', filters, pagination];
 
+  const {
+    data: transactionData,
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey,
+    queryFn: () => transactionService.getTransactions(filters, pagination),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const transactions = transactionData?.data || [];
+  const totalCount = transactionData?.count || 0;
+
+  // Mutations
+  const addTransactionMutation = useMutation({
+    mutationFn: transactionService.createTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+
+  const updateTransactionMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      transactionService.updateTransaction(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+
+  const deleteTransactionMutation = useMutation({
+    mutationFn: transactionService.deleteTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+
+  const duplicateTransactionMutation = useMutation({
+    mutationFn: transactionService.duplicateTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+
+  // Helper functions
+  const addTransaction = useCallback(async (transaction: any) => {
     try {
-      const { data, error } = await (supabase as any)
-        .from('transactions')
-        .select(`
-          *,
-          categories!inner(name)
-        `)
-        .eq('organization_id', currentOrganization.id)
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedTransactions = data?.map((t: any) => ({
-        id: t.id,
-        description: t.description,
-        amount: Number(t.amount),
-        date: t.date,
-        type: t.type as 'income' | 'expense',
-        category: t.categories?.name || 'Sem categoria',
-        paymentMethod: t.payment_method,
-        isRecurring: t.is_recurring,
-        installments: t.installments,
-        observations: t.observations,
-      })) || [];
-
-      setTransactions(formattedTransactions);
+      const result = await addTransactionMutation.mutateAsync(transaction);
+      return { data: result, error: null };
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setTransactions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [user, currentOrganization]);
-
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
-
-    try {
-      // Find category by name
-      const { data: categoryData } = await (supabase as any)
-        .from('categories')
-        .select('id')
-        .eq('name', transaction.category)
-        .eq('organization_id', currentOrganization.id)
-        .single();
-
-      const { data, error } = await (supabase as any)
-        .from('transactions')
-        .insert([{
-          description: transaction.description,
-          amount: transaction.amount,
-          date: transaction.date,
-          type: transaction.type,
-          category_id: categoryData?.id,
-          payment_method: transaction.paymentMethod,
-          is_recurring: transaction.isRecurring,
-          installments: transaction.installments,
-          observations: transaction.observations,
-          user_id: user.id,
-          organization_id: currentOrganization.id,
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await fetchTransactions();
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error adding transaction:', error);
       return { data: null, error: (error as Error).message };
     }
-  };
+  }, [addTransactionMutation]);
 
-  const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
-    if (!user || !currentOrganization) return { data: null, error: 'User not authenticated or no organization selected' };
-
+  const updateTransaction = useCallback(async (id: string, updates: any) => {
     try {
-      let categoryId = null;
-      if (transaction.category) {
-        const { data: categoryData } = await (supabase as any)
-          .from('categories')
-          .select('id')
-          .eq('name', transaction.category)
-          .eq('organization_id', currentOrganization.id)
-          .single();
-        categoryId = categoryData?.id;
-      }
-
-      const updateData: any = {};
-      if (transaction.description) updateData.description = transaction.description;
-      if (transaction.amount !== undefined) updateData.amount = transaction.amount;
-      if (transaction.date) updateData.date = transaction.date;
-      if (transaction.type) updateData.type = transaction.type;
-      if (categoryId) updateData.category_id = categoryId;
-      if (transaction.paymentMethod) updateData.payment_method = transaction.paymentMethod;
-      if (transaction.isRecurring !== undefined) updateData.is_recurring = transaction.isRecurring;
-      if (transaction.installments) updateData.installments = transaction.installments;
-      if (transaction.observations) updateData.observations = transaction.observations;
-
-      const { error } = await (supabase as any)
-        .from('transactions')
-        .update(updateData)
-        .eq('id', id)
-        .eq('organization_id', currentOrganization.id);
-
-      if (error) throw error;
-
-      await fetchTransactions();
-      return { data: null, error: null };
+      const result = await updateTransactionMutation.mutateAsync({ id, updates });
+      return { data: result, error: null };
     } catch (error) {
-      console.error('Error updating transaction:', error);
       return { data: null, error: (error as Error).message };
     }
-  };
+  }, [updateTransactionMutation]);
 
-  const deleteTransaction = async (id: string) => {
-    if (!user || !currentOrganization) return { error: 'User not authenticated or no organization selected' };
-
+  const deleteTransaction = useCallback(async (id: string) => {
     try {
-      const { error } = await (supabase as any)
-        .from('transactions')
-        .delete()
-        .eq('id', id)
-        .eq('organization_id', currentOrganization.id);
-
-      if (error) throw error;
-
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      await deleteTransactionMutation.mutateAsync(id);
       return { error: null };
     } catch (error) {
-      console.error('Error deleting transaction:', error);
       return { error: (error as Error).message };
     }
-  };
+  }, [deleteTransactionMutation]);
+
+  const duplicateTransaction = useCallback(async (id: string) => {
+    try {
+      const result = await duplicateTransactionMutation.mutateAsync(id);
+      return { data: result, error: null };
+    } catch (error) {
+      return { data: null, error: (error as Error).message };
+    }
+  }, [duplicateTransactionMutation]);
 
   return {
     transactions,
     isLoading,
+    error,
+    totalCount,
     addTransaction,
     updateTransaction,
     deleteTransaction,
-    refetch: fetchTransactions,
+    duplicateTransaction,
+    refetch,
+    // Mutation states
+    isAdding: addTransactionMutation.isPending,
+    isUpdating: updateTransactionMutation.isPending,
+    isDeleting: deleteTransactionMutation.isPending,
+    isDuplicating: duplicateTransactionMutation.isPending,
   };
 }

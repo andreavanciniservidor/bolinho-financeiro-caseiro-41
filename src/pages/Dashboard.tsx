@@ -1,13 +1,20 @@
 
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ChartCard } from '../components/dashboard/ChartCard';
+import { BudgetProgress } from '../components/dashboard/BudgetProgress';
+import { RecentTransactions } from '../components/dashboard/RecentTransactions';
+import { InteractiveCharts } from '../components/dashboard/InteractiveCharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useSupabaseTransactions } from '@/hooks/useSupabaseTransactions';
 import { useSupabaseBudgets } from '@/hooks/useSupabaseBudgets';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
+import { PageHeader, ContentSection, GridLayout, CardLayout, Stack } from '@/components/layout/Layout';
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const { transactions = [], isLoading: transactionsLoading, error: transactionsError } = useSupabaseTransactions();
   const { budgets = [], isLoading: budgetsLoading } = useSupabaseBudgets();
   const { categories = [] } = useSupabaseCategories();
@@ -112,194 +119,91 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <Stack space="lg">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">julho de 2025</p>
-      </div>
+      <PageHeader 
+        title="Dashboard" 
+        description="Visão geral das suas finanças em julho de 2025"
+      />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          title="Receitas"
-          value={`R$ ${totalIncome.toFixed(2)}`}
-          subtitle="No mês atual"
-          trend="up"
-          icon={<TrendingUp className="h-6 w-6" />}
-        />
-        <StatCard
-          title="Despesas"
-          value={`R$ ${totalExpenses.toFixed(2)}`}
-          subtitle="No mês atual"
-          trend="down"
-          icon={<TrendingDown className="h-6 w-6" />}
-        />
-        <StatCard
-          title="Saldo"
-          value={`R$ ${balance.toFixed(2)}`}
-          subtitle={balance >= 0 ? "Positivo" : "Negativo"}
-          trend={balance >= 0 ? "up" : "down"}
-          icon={<DollarSign className="h-6 w-6" />}
-        />
-        <StatCard
-          title="Controle de Orçamentos"
-          value={`${budgetControlPercentage.toFixed(0)}%`}
-          trend="neutral"
-          icon={<Target className="h-6 w-6" />}
-        />
-      </div>
+      <ContentSection>
+        <GridLayout cols={4} gap="md">
+          <StatCard
+            title="Receitas"
+            value={`R$ ${totalIncome.toFixed(2)}`}
+            subtitle="No mês atual"
+            trend="up"
+            icon={<TrendingUp className="h-6 w-6" />}
+          />
+          <StatCard
+            title="Despesas"
+            value={`R$ ${totalExpenses.toFixed(2)}`}
+            subtitle="No mês atual"
+            trend="down"
+            icon={<TrendingDown className="h-6 w-6" />}
+          />
+          <StatCard
+            title="Saldo"
+            value={`R$ ${balance.toFixed(2)}`}
+            subtitle={balance >= 0 ? "Positivo" : "Negativo"}
+            trend={balance >= 0 ? "up" : "down"}
+            icon={<DollarSign className="h-6 w-6" />}
+          />
+          <StatCard
+            title="Controle de Orçamentos"
+            value={`${budgetControlPercentage.toFixed(0)}%`}
+            trend="neutral"
+            icon={<Target className="h-6 w-6" />}
+          />
+        </GridLayout>
+      </ContentSection>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Comparison Chart */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Comparativo Mensal</h3>
-          {monthlyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Bar dataKey="receitas" fill="#22c55e" name="Receitas" />
-                <Bar dataKey="despesas" fill="#ef4444" name="Despesas" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <p className="mb-2">Nenhuma transação encontrada</p>
-                <p className="text-sm">Adicione suas primeiras transações para ver os gráficos</p>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-center space-x-6 mt-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span className="text-sm text-gray-600">Receitas</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded"></div>
-              <span className="text-sm text-gray-600">Despesas</span>
-            </div>
+      {/* Interactive Charts Section */}
+      <ContentSection>
+        <InteractiveCharts 
+          transactions={transactions}
+          className="w-full"
+        />
+      </ContentSection>
+
+      {/* Budget Progress and Recent Transactions */}
+      <GridLayout cols={2} gap="lg">
+        <CardLayout padding="lg">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-h3 text-foreground">Progresso dos Orçamentos</h3>
+            <button 
+              onClick={() => navigate('/budgets')}
+              className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
+            >
+              Gerenciar orçamentos →
+            </button>
           </div>
-          
-          <div className="grid grid-cols-3 gap-4 mt-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Total de Receitas</p>
-              <p className="text-lg font-semibold text-green-600">R$ {totalIncome.toFixed(2)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Total de Despesas</p>
-              <p className="text-lg font-semibold text-red-600">R$ {totalExpenses.toFixed(2)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Saldo Acumulado</p>
-              <p className={`text-lg font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                R$ {balance.toFixed(2)}
-              </p>
-            </div>
+          <BudgetProgress 
+            budgets={budgets}
+            loading={budgetsLoading}
+            onManageBudgets={() => navigate('/budgets')}
+          />
+        </CardLayout>
+
+        <CardLayout padding="lg">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-h3 text-foreground">Transações Recentes</h3>
+            <button 
+              onClick={() => navigate('/transactions')}
+              className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
+            >
+              Ver todas →
+            </button>
           </div>
-        </div>
-
-        {/* Category Pie Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Gastos por Categoria</h3>
-          {categoryData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2 mt-4">
-                {categoryData.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded" 
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <span className="text-sm text-gray-600">{item.name}</span>
-                    </div>
-                    <span className="text-sm font-medium">R$ {item.value.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <p className="mb-1">Nenhuma despesa encontrada</p>
-                <p className="text-sm">Adicione despesas para ver a distribuição</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Budget Progress */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Progresso dos Orçamentos</h3>
-          <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-            Gerenciar orçamentos →
-          </button>
-        </div>
-        <div className="space-y-4">
-          {!budgets || budgets.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-2">Nenhum orçamento criado ainda.</p>
-              <p className="text-sm text-gray-400">Crie seu primeiro orçamento para controlar seus gastos</p>
-            </div>
-          ) : (
-            budgets.map((budget) => {
-              const percentage = (budget.spentAmount / budget.plannedAmount) * 100;
-              const isOverBudget = percentage > 100;
-              const isNearLimit = percentage >= budget.alertPercentage;
-              
-              return (
-                <div key={budget.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{budget.name}</span>
-                    <span className="text-sm text-gray-500">
-                      R$ {budget.spentAmount.toFixed(2)} / R$ {budget.plannedAmount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        isOverBudget 
-                          ? 'bg-red-500' 
-                          : isNearLimit 
-                          ? 'bg-yellow-500' 
-                          : 'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(percentage, 100)}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{budget.category}</span>
-                    <span>{percentage.toFixed(0)}%</span>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
+          <RecentTransactions 
+            transactions={transactions}
+            loading={transactionsLoading}
+            limit={5}
+            onViewAll={() => navigate('/transactions')}
+          />
+        </CardLayout>
+      </GridLayout>
+    </Stack>
   );
 }

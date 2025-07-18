@@ -126,10 +126,14 @@ export type Database = {
           date: string
           description: string
           id: string
+          installment_number: number | null
           installments: number | null
           is_recurring: boolean | null
           observations: string | null
+          parent_transaction_id: string | null
           payment_method: string
+          recurrence_rule: Json | null
+          tags: string[] | null
           type: string
           updated_at: string | null
           user_id: string
@@ -141,10 +145,14 @@ export type Database = {
           date: string
           description: string
           id?: string
+          installment_number?: number | null
           installments?: number | null
           is_recurring?: boolean | null
           observations?: string | null
+          parent_transaction_id?: string | null
           payment_method?: string
+          recurrence_rule?: Json | null
+          tags?: string[] | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -156,10 +164,14 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          installment_number?: number | null
           installments?: number | null
           is_recurring?: boolean | null
           observations?: string | null
+          parent_transaction_id?: string | null
           payment_method?: string
+          recurrence_rule?: Json | null
+          tags?: string[] | null
           type?: string
           updated_at?: string | null
           user_id?: string

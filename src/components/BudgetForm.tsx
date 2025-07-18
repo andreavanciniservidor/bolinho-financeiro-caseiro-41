@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Bell } from 'lucide-react';
-import { categories } from '../data/mockData';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { Budget } from '../types';
 
 interface BudgetFormProps {
@@ -41,7 +41,7 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
     onClose();
   };
 
-  const expenseCategories = categories.filter(cat => cat.type === 'expense');
+  const { categories, isLoading } = useSupabaseCategories('expense');
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -71,7 +71,7 @@ export function BudgetForm({ open, onClose, onSubmit, budget }: BudgetFormProps)
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
-                {expenseCategories.map((category) => (
+                {categories.map((category) => (
                   <SelectItem key={category.id} value={category.name}>
                     {category.name}
                   </SelectItem>

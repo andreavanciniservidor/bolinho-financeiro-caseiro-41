@@ -5,16 +5,15 @@ import {
   PiggyBank, 
   BarChart3,
   Bell,
-  Menu,
-  X,
   LogOut,
   Tag
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -24,8 +23,12 @@ const navigation = [
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
 ];
 
-export function Sidebar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+interface SidebarProps {
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (isOpen: boolean) => void;
+}
+
+export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -34,53 +37,121 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 bg-white rounded-lg shadow-md border border-gray-200"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6 text-gray-700" />
-          ) : (
-            <Menu className="h-6 w-6 text-gray-700" />
-          )}
-        </button>
-      </div>
-
-      {/* Mobile backdrop */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={cn(
-        "flex flex-col bg-white border-r border-gray-200 h-screen transition-transform duration-300 ease-in-out z-40",
-        // Desktop: always visible, fixed width
-        "lg:relative lg:translate-x-0 lg:w-64",
-        // Mobile: overlay, full height, conditional visibility
-        "fixed inset-y-0 left-0 w-64 lg:w-64",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 lg:bg-sidebar lg:border-r lg:border-sidebar-border">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <PiggyBank className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <PiggyBank className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-semibold text-gray-900 text-sm sm:text-base truncate">Fin Control</h1>
-              <p className="text-xs text-gray-500 truncate">Controle Financeiro</p>
+              <h1 className="font-semibold text-sidebar-foreground text-base truncate">Finanças+</h1>
+              <p className="text-xs text-muted-foreground truncate">Controle Financeiro</p>
             </div>
           </div>
-          <Bell className="h-5 w-5 text-gray-400 flex-shrink-0" />
+          <div className="relative">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-xs"
+            >
+              3
+            </Badge>
+          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav id="main-navigation" className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {navigation.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 w-full group',
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                )
+              }
+            >
+              <item.icon className="h-5 w-5 flex-shrink-0 transition-colors" />
+              <span className="truncate">{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* User section */}
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center space-x-3 mb-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.user_metadata?.first_name || 'Usuário'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email || 'usuario@exemplo.com'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="w-full justify-start text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside 
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out lg:hidden",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+        aria-label="Menu de navegação móvel"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <PiggyBank className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sidebar-foreground text-base truncate">Finanças+</h1>
+              <p className="text-xs text-muted-foreground truncate">Controle Financeiro</p>
+            </div>
+          </div>
+          <div className="relative">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-xs"
+            >
+              3
+            </Badge>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav id="mobile-navigation" className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Navegação principal">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
@@ -88,10 +159,10 @@ export function Sidebar() {
               onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full',
+                  'flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 w-full',
                   isActive
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 )
               }
             >
@@ -102,35 +173,33 @@ export function Sidebar() {
         </nav>
 
         {/* User section */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-gray-700">
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center space-x-3 mb-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {user?.user_metadata?.first_name || 'Usuário'}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {user?.email || 'usuario@exemplo.com'}
               </p>
             </div>
           </div>
-          <div className="flex items-center mt-2 space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="text-xs text-gray-500 hover:text-gray-700 p-1 h-auto"
-            >
-              <LogOut className="h-3 w-3 mr-1" />
-              Sair
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="w-full justify-start text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
         </div>
-      </div>
+      </aside>
     </>
   );
 }
