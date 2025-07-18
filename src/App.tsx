@@ -20,12 +20,12 @@ import { initMonitoring, setUser, clearUser } from '@/services/monitoringService
 import { initAnalytics } from '@/services/analyticsService';
 import { initWebVitals } from '@/utils/webVitals';
 
-// Import pages directly instead of lazy loading to avoid the primitive value error
-import Auth from '@/pages/Auth';
+// Import pages with named exports
+import { Auth } from '@/pages/Auth';
 import { Dashboard } from '@/pages/Dashboard';
-import Transactions from '@/pages/Transactions';
-import Budgets from '@/pages/Budgets';
-import Reports from '@/pages/Reports';
+import { Transactions } from '@/pages/Transactions';
+import { Budgets } from '@/pages/Budgets';
+import { Reports } from '@/pages/Reports';
 import { Categories } from '@/pages/Categories';
 import NotFound from '@/pages/NotFound';
 
@@ -47,7 +47,7 @@ const queryClient = new QueryClient({
         return failureCount < 2;
       },
       staleTime: 5 * 60 * 1000, // 5 minutos
-      cacheTime: 10 * 60 * 1000, // 10 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos (replaced cacheTime)
       refetchOnWindowFocus: false, // Não refetch automaticamente ao focar a janela
       refetchOnMount: true, // Refetch ao montar o componente
       refetchOnReconnect: true, // Refetch ao reconectar
