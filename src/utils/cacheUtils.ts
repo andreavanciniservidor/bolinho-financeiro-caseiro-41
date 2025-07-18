@@ -105,6 +105,24 @@ export function clearCache(): void {
 }
 
 /**
+ * Preload images for better performance
+ * @param imageUrls Array of image URLs to preload
+ * @returns Promise that resolves when all images are loaded
+ */
+export function preloadImages(imageUrls: string[]): Promise<void[]> {
+  const promises = imageUrls.map(url => {
+    return new Promise<void>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
+  });
+  
+  return Promise.all(promises);
+}
+
+/**
  * Save user data to cache
  * @param userData User data to cache
  */
